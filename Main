@@ -34,14 +34,13 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.TextScaled = true
 
 local hackList = {
-	{"Fling Hack", "fling"},
 	{"Speed Hack", "speed"},
 	{"ESP Hack", "esp"},
-	{"Teleport Hack", "teleport"},
 	{"Fly Hack", "fly"},
 	{"Infinite Yield", "iy"},
 	{"Noclip Hack", "noclip"}
 }
+
 local hackButtons = {}
 for i, data in ipairs(hackList) do
 	local button = Instance.new("TextButton", MainFrame)
@@ -76,20 +75,14 @@ local function createSubGUI(titleText, sizeX, sizeY)
 	return frame, closeBtn
 end
 
--- Fling Hack (external loadstring)
-hackButtons["fling"].MouseButton1Click:Connect(function()
-	if not _G.ExternalFlingLoaded then
-		_G.ExternalFlingLoaded = true
-		-- Replace the URL below with an actual working loadstring URL from another player
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/ExternalFlingHack/main/source.lua"))()
-	end
-end)
-
+----------------------------------------------------
 -- Speed Hack (custom)
 local speedFrame, speedEnabled = nil, false
 local defaultSpeed = 16
 local function disableSpeed()
-	if Humanoid then Humanoid.WalkSpeed = defaultSpeed end
+	if Humanoid then
+		Humanoid.WalkSpeed = defaultSpeed
+	end
 	speedEnabled = false
 end
 local function showSpeedGUI()
@@ -134,13 +127,16 @@ local function showSpeedGUI()
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
+----------------------------------------------------
 -- ESP Hack (custom)
 local espFrame, espEnabled = nil, false
 local function disableESP()
 	for _, p in pairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
 			local h = p.Character:FindFirstChild("ESP_Highlight")
-			if h then h:Destroy() end
+			if h then
+				h:Destroy()
+			end
 		end
 	end
 	espEnabled = false
@@ -201,15 +197,7 @@ Players.PlayerAdded:Connect(function(p)
 	end
 end)
 
--- Teleport Hack (external loadstring)
-hackButtons["teleport"].MouseButton1Click:Connect(function()
-	if not _G.ExternalTeleportLoaded then
-		_G.ExternalTeleportLoaded = true
-		-- Replace the URL below with an actual working loadstring URL that provides a dropdown teleport GUI
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/ExternalTeleportHack/main/source.lua"))()
-	end
-end)
-
+----------------------------------------------------
 -- Fly Hack (custom with adjustable fly speed)
 local flyFrame, flyEnabled = nil, false
 local flyConnection = nil
@@ -286,6 +274,16 @@ local function showFlyGUI()
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
 
+----------------------------------------------------
+-- Infinite Yield (external)
+hackButtons["iy"].MouseButton1Click:Connect(function()
+	if not _G.InfiniteYieldLoaded then
+		_G.InfiniteYieldLoaded = true
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+	end
+end)
+
+----------------------------------------------------
 -- Noclip Hack (custom)
 local noclipFrame, noclipEnabled = nil, false
 local noclipConnection = nil
@@ -341,11 +339,3 @@ local function showNoclipGUI()
 	end)
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
-
--- Infinite Yield (external)
-hackButtons["iy"].MouseButton1Click:Connect(function()
-	if not _G.InfiniteYieldLoaded then
-		_G.InfiniteYieldLoaded = true
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-	end
-end)
