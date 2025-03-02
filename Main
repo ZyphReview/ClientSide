@@ -76,12 +76,12 @@ local function createSubGUI(titleText, sizeX, sizeY)
 	return frame, closeBtn
 end
 
--- External Fling Hack loadstring
+-- Fling Hack (external loadstring)
 hackButtons["fling"].MouseButton1Click:Connect(function()
-	if not _G.FlingHackLoaded then
-		_G.FlingHackLoaded = true
-		-- Replace the URL below with an actual working loadstring URL for a keyless fling hack
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/FlingHack/main/source.lua"))()
+	if not _G.ExternalFlingLoaded then
+		_G.ExternalFlingLoaded = true
+		-- Replace the URL below with an actual working loadstring URL from another player
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/ExternalFlingHack/main/source.lua"))()
 	end
 end)
 
@@ -201,12 +201,12 @@ Players.PlayerAdded:Connect(function(p)
 	end
 end)
 
--- External Teleport Hack loadstring (dropdown of all players)
+-- Teleport Hack (external loadstring)
 hackButtons["teleport"].MouseButton1Click:Connect(function()
-	if not _G.TeleportHackLoaded then
-		_G.TeleportHackLoaded = true
+	if not _G.ExternalTeleportLoaded then
+		_G.ExternalTeleportLoaded = true
 		-- Replace the URL below with an actual working loadstring URL that provides a dropdown teleport GUI
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/TeleportGUI/main/source.lua"))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/ExternalTeleportHack/main/source.lua"))()
 	end
 end)
 
