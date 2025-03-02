@@ -50,6 +50,7 @@ local function createSubMenu(titleText)
     SubFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
     SubFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 80)
     SubFrame.Visible = false
+    SubFrame.Draggable = true
     
     local SubTitle = Instance.new("TextLabel", SubFrame)
     SubTitle.Size = UDim2.new(1, 0, 0, 40)
@@ -75,14 +76,16 @@ local SpeedMenu = createSubMenu("Speed Hack")
 local SpeedInput = Instance.new("TextBox", SpeedMenu)
 SpeedInput.Size = UDim2.new(0.8, 0, 0, 40)
 SpeedInput.Position = UDim2.new(0.1, 0, 0.3, 0)
-SpeedInput.PlaceholderText = "Enter Speed"
+SpeedInput.PlaceholderText = "Number"
 SpeedInput.TextScaled = true
+SpeedInput.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
 
 local SpeedApply = Instance.new("TextButton", SpeedMenu)
 SpeedApply.Size = UDim2.new(0.8, 0, 0, 40)
 SpeedApply.Position = UDim2.new(0.1, 0, 0.6, 0)
 SpeedApply.Text = "Apply"
 SpeedApply.TextScaled = true
+SpeedApply.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
 SpeedApply.MouseButton1Click:Connect(function()
     local speed = tonumber(SpeedInput.Text)
     if speed then
@@ -96,10 +99,44 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-createButton("Fling", 60, fling)
+createButton("Fling", 60, function()
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.Velocity = Vector3.new(math.random(-500, 500), math.random(500, 1000), math.random(-500, 500))
+        hrp.RotVelocity = Vector3.new(math.random(-30, 30), math.random(-30, 30), math.random(-30, 30))
+    end
+end)
+
 createButton("Speed Hack", 110, function() SpeedMenu.Visible = true end)
-createButton("Enable ESP", 160, enableESP)
-createButton("Invisibility", 210, makeInvisible)
-createButton("Teleport (Enter Name Above)", 300, teleportToPlayer)
-createButton("Toggle Auto Clicker", 350, toggleAutoClicker)
-createButton("Load Infinite Yield", 400, loadInfiniteYield)
+createButton("Enable ESP", 160, function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player then
+            local highlight = Instance.new("Highlight", p.Character)
+            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        end
+    end
+end)
+createButton("Invisibility", 210, function()
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 1
+        end
+    end
+end)
+createButton("Teleport", 260, function()
+    local targetName = "TargetNameHere"  -- Replace with input method
+    local target = Players:FindFirstChild(targetName)
+    if target and target.Character then
+        character:MoveTo(target.Character:GetPrimaryPartCFrame().Position)
+    end
+end)
+createButton("Toggle Auto Clicker", 310, function()
+    local autoClicking = not autoClicking
+    while autoClicking do
+        mouse1click()
+        task.wait(0.1)
+    end
+end)
+createButton("Load Infinite Yield", 360, function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end)
