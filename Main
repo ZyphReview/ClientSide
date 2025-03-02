@@ -6,7 +6,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 local HRP = Character:WaitForChild("HumanoidRootPart")
@@ -77,29 +76,33 @@ local function createSubGUI(titleText, sizeX, sizeY)
 	return frame, closeBtn
 end
 
+-- New Fling Hack (community style using BodyGyro)
 local flingFrame, flingEnabled = nil, false
-local function disableFling()
-	if HRP then
-		for _, c in ipairs(HRP:GetChildren()) do
-			if c.Name == "FlingAngularVelocity" then
-				c:Destroy()
+local newFlingConnection = nil
+local function toggleFling()
+	flingEnabled = not flingEnabled
+	if flingEnabled then
+		newFlingConnection = RunService.RenderStepped:Connect(function()
+			if HRP then
+				local bg = HRP:FindFirstChild("FlingGyro")
+				if not bg then
+					bg = Instance.new("BodyGyro", HRP)
+					bg.Name = "FlingGyro"
+					bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
+					bg.P = 3000
+				end
+				bg.CFrame = HRP.CFrame * CFrame.Angles(math.rad(math.random(-5,5)), math.rad(math.random(-5,5)), math.rad(math.random(-5,5)))
 			end
+		end)
+	else
+		if newFlingConnection then
+			newFlingConnection:Disconnect()
+			newFlingConnection = nil
+		end
+		if HRP and HRP:FindFirstChild("FlingGyro") then
+			HRP.FlingGyro:Destroy()
 		end
 	end
-	flingEnabled = false
-end
-local function enableFling()
-	flingEnabled = true
-	local rootJoint = HRP:FindFirstChild("RootJoint") or Character:FindFirstChild("RootJoint", true)
-	if rootJoint then
-		rootJoint:Destroy()
-	end
-	local bav = Instance.new("BodyAngularVelocity")
-	bav.Name = "FlingAngularVelocity"
-	bav.AngularVelocity = Vector3.new(30,30,30)
-	bav.MaxTorque = Vector3.new(1e5,1e5,1e5)
-	bav.P = 1000
-	bav.Parent = HRP
 end
 local function showFlingGUI()
 	if flingFrame then
@@ -115,19 +118,19 @@ local function showFlingGUI()
 	toggleBtn.TextScaled = true
 	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
 	toggleBtn.MouseButton1Click:Connect(function()
-		flingEnabled = not flingEnabled
+		toggleFling()
 		if flingEnabled then
 			toggleBtn.Text = "Disable"
-			enableFling()
 		else
 			toggleBtn.Text = "Enable"
-			disableFling()
 		end
 	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		flingFrame.Visible = false
-		disableFling()
-		toggleBtn.Text = "Enable"
+		if flingEnabled then
+			toggleFling()
+			toggleBtn.Text = "Enable"
+		end
 	end)
 end
 hackButtons["fling"].MouseButton1Click:Connect(showFlingGUI)
