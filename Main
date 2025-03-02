@@ -6,7 +6,13 @@ local mouse = player:GetMouse()
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChildOfClass("Humanoid")
 
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+-- Persistent state for auto clicking
+local autoClicking = false
+
+-- Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 350, 0, 550)
 MainFrame.Position = UDim2.new(0.5, -175, 0.3, 0)
@@ -72,11 +78,12 @@ local function createSubMenu(titleText)
     return SubFrame
 end
 
+-- Speed Hack submenu
 local SpeedMenu = createSubMenu("Speed Hack")
 local SpeedInput = Instance.new("TextBox", SpeedMenu)
 SpeedInput.Size = UDim2.new(0.8, 0, 0, 40)
 SpeedInput.Position = UDim2.new(0.1, 0, 0.3, 0)
-SpeedInput.PlaceholderText = "Number"
+SpeedInput.PlaceholderText = "Enter Speed"
 SpeedInput.TextScaled = true
 SpeedInput.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
 
@@ -93,12 +100,14 @@ SpeedApply.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Toggle the main GUI with the "K" key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.K and not gameProcessed then
         MainFrame.Visible = not MainFrame.Visible
     end
 end)
 
+-- Fling button
 createButton("Fling", 60, function()
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if hrp then
@@ -107,15 +116,27 @@ createButton("Fling", 60, function()
     end
 end)
 
-createButton("Speed Hack", 110, function() SpeedMenu.Visible = true end)
+-- Speed Hack button
+createButton("Speed Hack", 110, function() 
+    SpeedMenu.Visible = true 
+end)
+
+-- Enable ESP button
 createButton("Enable ESP", 160, function()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player then
-            local highlight = Instance.new("Highlight", p.Character)
-            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        if p ~= player and p.Character then
+            local highlight = p.Character:FindFirstChild("ESP_Highlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "ESP_Highlight"
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.Parent = p.Character
+            end
         end
     end
 end)
+
+-- Invisibility button
 createButton("Invisibility", 210, function()
     for _, part in pairs(character:GetChildren()) do
         if part:IsA("BasePart") then
@@ -123,20 +144,45 @@ createButton("Invisibility", 210, function()
         end
     end
 end)
+
+-- Teleport button (update targetName as needed)
 createButton("Teleport", 260, function()
-    local targetName = "TargetNameHere"  -- Replace with input method
+    local targetName = "TargetNameHere"  -- Replace with the desired target player's name
     local target = Players:FindFirstChild(targetName)
-    if target and target.Character then
-        character:MoveTo(target.Character:GetPrimaryPartCFrame().Position)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        character:MoveTo(target.Character.HumanoidRootPart.Position)
+    else
+        warn("Target player not found or does not have a character.")
     end
 end)
+
+-- Toggle Auto Clicker button
 createButton("Toggle Auto Clicker", 310, function()
-    local autoClicking = not autoClicking
-    while autoClicking do
-        mouse1click()
-        task.wait(0.1)
+    autoClicking = not autoClicking
+    if autoClicking then
+        task.spawn(function()
+            while autoClicking do
+                -- Replace this with your preferred method to simulate a click.
+                -- For example, if your executor supports a 'mouse1click' function, use that.
+                if type(mouse1click) == "function" then
+                    mouse1click()
+                else
+                    -- Alternatively, if using VirtualInputManager:
+                    -- local VirtualInputManager = game:GetService("VirtualInputManager")
+                    -- VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, true, game, 0)
+                end
+                task.wait(0.1)
+            end
+        end)
     end
 end)
+
+-- Load Infinite Yield button
 createButton("Load Infinite Yield", 360, function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end)
+    if not success then
+        warn("Failed to load Infinite Yield: " .. tostring(err))
+    end
 end)
