@@ -39,9 +39,9 @@ local hackList = {
 	{"Speed Hack", "speed"},
 	{"ESP Hack", "esp"},
 	{"Teleport Hack", "teleport"},
-	{"Aimbot Hack", "aimbot"},
 	{"Fly Hack", "fly"},
-	{"Infinite Yield", "iy"}
+	{"Infinite Yield", "iy"},
+	{"Noclip Hack", "noclip"}
 }
 local hackButtons = {}
 for i, data in ipairs(hackList) do
@@ -304,72 +304,6 @@ local function showTeleportGUI()
 end
 hackButtons["teleport"].MouseButton1Click:Connect(showTeleportGUI)
 
-local aimbotFrame, aimbotEnabled = nil, false
-local aimbotConnection = nil
-local function getClosestPlayerToMouse()
-	local closestPlayer = nil
-	local closestDist = math.huge
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
-			local pos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(p.Character.Head.Position)
-			if onScreen then
-				local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
-				if dist < closestDist then
-					closestDist = dist
-					closestPlayer = p.Character.Head
-				end
-			end
-		end
-	end
-	return closestPlayer
-end
-local function enableAimbotExternal()
-	aimbotEnabled = true
-	aimbotConnection = RunService.RenderStepped:Connect(function()
-		local target = getClosestPlayerToMouse()
-		if target then
-			workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame:Lerp(CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Position), 0.2)
-		end
-	end)
-end
-local function disableAimbotExternal()
-	aimbotEnabled = false
-	if aimbotConnection then
-		aimbotConnection:Disconnect()
-		aimbotConnection = nil
-	end
-end
-local function showAimbotGUI()
-	if aimbotFrame then
-		aimbotFrame.Visible = true
-		return
-	end
-	local frame, closeBtn = createSubGUI("Aimbot Hack", 250, 150)
-	aimbotFrame = frame
-	local toggleBtn = Instance.new("TextButton", aimbotFrame)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0,50)
-	toggleBtn.Text = "Enable Aimbot"
-	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	toggleBtn.MouseButton1Click:Connect(function()
-		aimbotEnabled = not aimbotEnabled
-		if aimbotEnabled then
-			toggleBtn.Text = "Disable Aimbot"
-			enableAimbotExternal()
-		else
-			toggleBtn.Text = "Enable Aimbot"
-			disableAimbotExternal()
-		end
-	end)
-	closeBtn.MouseButton1Click:Connect(function()
-		aimbotFrame.Visible = false
-		disableAimbotExternal()
-		toggleBtn.Text = "Enable Aimbot"
-	end)
-end
-hackButtons["aimbot"].MouseButton1Click:Connect(showAimbotGUI)
-
 local flyFrame, flyEnabled = nil, false
 local flyConnection = nil
 local flySpeed = 50
@@ -444,6 +378,61 @@ local function showFlyGUI()
 	end)
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
+
+local noclipFrame, noclipEnabled = nil, false
+local noclipConnection = nil
+local function disableNoclip()
+	noclipEnabled = false
+	if noclipConnection then
+		noclipConnection:Disconnect()
+		noclipConnection = nil
+	end
+	for _, v in ipairs(Character:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.CanCollide = true
+		end
+	end
+end
+local function enableNoclip()
+	noclipEnabled = true
+	noclipConnection = RunService.RenderStepped:Connect(function()
+		for _, v in ipairs(Character:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end)
+end
+local function showNoclipGUI()
+	if noclipFrame then
+		noclipFrame.Visible = true
+		return
+	end
+	local frame, closeBtn = createSubGUI("Noclip Hack", 250, 150)
+	noclipFrame = frame
+	local toggleBtn = Instance.new("TextButton", noclipFrame)
+	toggleBtn.Size = UDim2.new(0.8,0,0,30)
+	toggleBtn.Position = UDim2.new(0.1,0,0,50)
+	toggleBtn.Text = "Enable Noclip"
+	toggleBtn.TextScaled = true
+	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	toggleBtn.MouseButton1Click:Connect(function()
+		noclipEnabled = not noclipEnabled
+		if noclipEnabled then
+			toggleBtn.Text = "Disable Noclip"
+			enableNoclip()
+		else
+			toggleBtn.Text = "Enable Noclip"
+			disableNoclip()
+		end
+	end)
+	closeBtn.MouseButton1Click:Connect(function()
+		noclipFrame.Visible = false
+		disableNoclip()
+		toggleBtn.Text = "Enable Noclip"
+	end)
+end
+hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
 
 hackButtons["iy"].MouseButton1Click:Connect(function()
 	if not _G.InfiniteYieldLoaded then
