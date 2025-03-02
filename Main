@@ -1,0 +1,105 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 350, 0, 550)
+MainFrame.Position = UDim2.new(0.5, -175, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 50)
+MainFrame.BorderSizePixel = 5
+MainFrame.Draggable = true
+MainFrame.Active = true
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.SourceSansBold
+Title.Text = "Universal ClientSide Hacks"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+
+local FollowLabel = Instance.new("TextLabel", MainFrame)
+FollowLabel.Size = UDim2.new(1, 0, 0, 30)
+FollowLabel.Position = UDim2.new(0, 0, 0.92, 0)
+FollowLabel.BackgroundTransparency = 1
+FollowLabel.Font = Enum.Font.SourceSansBold
+FollowLabel.Text = "Follow Zyph on ScriptBlox"
+FollowLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+FollowLabel.TextScaled = true
+
+local function createButton(name, position, callback)
+    local button = Instance.new("TextButton", MainFrame)
+    button.Size = UDim2.new(0.9, 0, 0, 40)
+    button.Position = UDim2.new(0.05, 0, 0, position)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Text = name
+    button.Font = Enum.Font.GothamBold
+    button.TextScaled = true
+    button.MouseButton1Click:Connect(callback)
+end
+
+local function createSubMenu(titleText)
+    local SubFrame = Instance.new("Frame", ScreenGui)
+    SubFrame.Size = UDim2.new(0, 300, 0, 250)
+    SubFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
+    SubFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 80)
+    SubFrame.Visible = false
+    
+    local SubTitle = Instance.new("TextLabel", SubFrame)
+    SubTitle.Size = UDim2.new(1, 0, 0, 40)
+    SubTitle.BackgroundTransparency = 1
+    SubTitle.Font = Enum.Font.SourceSansBold
+    SubTitle.Text = titleText
+    SubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SubTitle.TextScaled = true
+    
+    local CloseButton = Instance.new("TextButton", SubFrame)
+    CloseButton.Size = UDim2.new(0.3, 0, 0, 30)
+    CloseButton.Position = UDim2.new(0.7, 0, 0, 10)
+    CloseButton.Text = "Close"
+    CloseButton.TextScaled = true
+    CloseButton.MouseButton1Click:Connect(function()
+        SubFrame.Visible = false
+    end)
+    
+    return SubFrame
+end
+
+local SpeedMenu = createSubMenu("Speed Hack")
+local SpeedInput = Instance.new("TextBox", SpeedMenu)
+SpeedInput.Size = UDim2.new(0.8, 0, 0, 40)
+SpeedInput.Position = UDim2.new(0.1, 0, 0.3, 0)
+SpeedInput.PlaceholderText = "Enter Speed"
+SpeedInput.TextScaled = true
+
+local SpeedApply = Instance.new("TextButton", SpeedMenu)
+SpeedApply.Size = UDim2.new(0.8, 0, 0, 40)
+SpeedApply.Position = UDim2.new(0.1, 0, 0.6, 0)
+SpeedApply.Text = "Apply"
+SpeedApply.TextScaled = true
+SpeedApply.MouseButton1Click:Connect(function()
+    local speed = tonumber(SpeedInput.Text)
+    if speed then
+        humanoid.WalkSpeed = speed
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.K and not gameProcessed then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+createButton("Fling", 60, fling)
+createButton("Speed Hack", 110, function() SpeedMenu.Visible = true end)
+createButton("Enable ESP", 160, enableESP)
+createButton("Invisibility", 210, makeInvisible)
+createButton("Teleport (Enter Name Above)", 300, teleportToPlayer)
+createButton("Toggle Auto Clicker", 350, toggleAutoClicker)
+createButton("Load Infinite Yield", 400, loadInfiniteYield)
