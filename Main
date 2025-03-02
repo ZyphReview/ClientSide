@@ -1,371 +1,52 @@
-if _G.UniversalHacksLoaded then return end
-_G.UniversalHacksLoaded = true
+if _G.BigUniversalScriptLoaded then return end
+_G.BigUniversalScriptLoaded = true
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local mouse = LocalPlayer:GetMouse()
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HacksScreenGui"
-ScreenGui.Parent = game.CoreGui
-
-local MainMenuFrame = Instance.new("Frame", ScreenGui)
-MainMenuFrame.Name = "MainMenuFrame"
-MainMenuFrame.Size = UDim2.new(0,300,0,400)
-MainMenuFrame.Position = UDim2.new(0,50,0.5,-200)
-MainMenuFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-MainMenuFrame.BorderSizePixel = 0
-MainMenuFrame.Active = true
-MainMenuFrame.Draggable = true
-
-local TitleLabel = Instance.new("TextLabel", MainMenuFrame)
-TitleLabel.Size = UDim2.new(1,0,0,40)
-TitleLabel.Text = "Universal Hacks"
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.TextColor3 = Color3.new(1,1,1)
-TitleLabel.TextScaled = true
-
-local hacks = {
-	{"Fling Hack","fling"},
-	{"Speed Hack","speed"},
-	{"ESP Hack","esp"},
-	{"Teleport Hack","teleport"},
-	{"Infinite Yield","iy"}
-}
-local hackButtons = {}
-for i, hack in ipairs(hacks) do
-	local btn = Instance.new("TextButton", MainMenuFrame)
-	btn.Size = UDim2.new(0.9,0,0,30)
-	btn.Position = UDim2.new(0.05,0,0,40+(i-1)*35)
-	btn.Text = hack[1]
-	btn.TextScaled = true
-	btn.BackgroundColor3 = Color3.fromRGB(50,50,150)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Name = hack[2].."Button"
-	hackButtons[hack[2]] = btn
-end
+local Mouse = LocalPlayer:GetMouse()
 
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 local HRP = Character:WaitForChild("HumanoidRootPart")
+
 LocalPlayer.CharacterAdded:Connect(function(char)
-	Character = char
-	Humanoid = char:WaitForChild("Humanoid")
-	HRP = char:WaitForChild("HumanoidRootPart")
+    Character = char
+    Humanoid = char:WaitForChild("Humanoid")
+    HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
--------------------------------------
--- Fling Hack
-local flingGUI, flingEnabled = nil, false
-local function disableFling()
-	if HRP and HRP:FindFirstChild("FlingAngularVelocity") then
-		HRP.FlingAngularVelocity:Destroy()
-	end
-	flingEnabled = false
-end
-local function createFlingGUI()
-	if flingGUI then
-		flingGUI.Visible = true
-		return
-	end
-	flingGUI = Instance.new("Frame", ScreenGui)
-	flingGUI.Name = "FlingGUI"
-	flingGUI.Size = UDim2.new(0,250,0,150)
-	flingGUI.Position = UDim2.new(0.5,-125,0.5,-75)
-	flingGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	flingGUI.Active = true
-	flingGUI.Draggable = true
-	
-	local title = Instance.new("TextLabel", flingGUI)
-	title.Size = UDim2.new(1,0,0,30)
-	title.Text = "Fling Hack"
-	title.BackgroundTransparency = 1
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextScaled = true
-	
-	local toggleBtn = Instance.new("TextButton", flingGUI)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0.4,0)
-	toggleBtn.Text = "Enable"
-	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	
-	local closeBtn = Instance.new("TextButton", flingGUI)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
-	closeBtn.Text = "X"
-	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	closeBtn.MouseButton1Click:Connect(function()
-		flingGUI.Visible = false
-		disableFling()
-	end)
-	
-	toggleBtn.MouseButton1Click:Connect(function()
-		flingEnabled = not flingEnabled
-		if flingEnabled then
-			toggleBtn.Text = "Disable"
-			if HRP then
-				local bav = Instance.new("BodyAngularVelocity")
-				bav.Name = "FlingAngularVelocity"
-				bav.AngularVelocity = Vector3.new(50,50,50)
-				bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
-				bav.P = 1000
-				bav.Parent = HRP
-			end
-		else
-			toggleBtn.Text = "Enable"
-			disableFling()
-		end
-	end)
-end
-hackButtons["fling"].MouseButton1Click:Connect(createFlingGUI)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BigUniversalGUI"
+ScreenGui.Parent = game.CoreGui
 
--------------------------------------
--- Speed Hack
-local speedGUI, speedEnabled = nil, false
-local defaultSpeed = 16
-local hackSpeed = defaultSpeed
-local function disableSpeed()
-	if Humanoid then
-		Humanoid.WalkSpeed = defaultSpeed
-	end
-	speedEnabled = false
-end
-local function createSpeedGUI()
-	if speedGUI then
-		speedGUI.Visible = true
-		return
-	end
-	speedGUI = Instance.new("Frame", ScreenGui)
-	speedGUI.Name = "SpeedGUI"
-	speedGUI.Size = UDim2.new(0,250,0,150)
-	speedGUI.Position = UDim2.new(0.5,-125,0.5,-75)
-	speedGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	speedGUI.Active = true
-	speedGUI.Draggable = true
-	
-	local title = Instance.new("TextLabel", speedGUI)
-	title.Size = UDim2.new(1,0,0,30)
-	title.Text = "Speed Hack"
-	title.BackgroundTransparency = 1
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextScaled = true
-	
-	local speedBox = Instance.new("TextBox", speedGUI)
-	speedBox.Size = UDim2.new(0.8,0,0,30)
-	speedBox.Position = UDim2.new(0.1,0,0.4,0)
-	speedBox.PlaceholderText = "16"
-	speedBox.Text = "16"
-	speedBox.TextScaled = true
-	speedBox.BackgroundColor3 = Color3.fromRGB(60,60,180)
-	speedBox.TextColor3 = Color3.new(1,1,1)
-	
-	local toggleBtn = Instance.new("TextButton", speedGUI)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0.75,0)
-	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	toggleBtn.Text = "Speed: " .. defaultSpeed
-	
-	local closeBtn = Instance.new("TextButton", speedGUI)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
-	closeBtn.Text = "X"
-	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	closeBtn.MouseButton1Click:Connect(function()
-		speedGUI.Visible = false
-		disableSpeed()
-		toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-		toggleBtn.Text = "Speed: " .. defaultSpeed
-	end)
-	
-	toggleBtn.MouseButton1Click:Connect(function()
-		speedEnabled = not speedEnabled
-		if speedEnabled then
-			hackSpeed = tonumber(speedBox.Text) or defaultSpeed
-			Humanoid.WalkSpeed = hackSpeed
-			toggleBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
-			toggleBtn.Text = "Speed: " .. hackSpeed
-		else
-			Humanoid.WalkSpeed = defaultSpeed
-			toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-			toggleBtn.Text = "Speed: " .. defaultSpeed
-		end
-	end)
-end
-hackButtons["speed"].MouseButton1Click:Connect(createSpeedGUI)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0, 50, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
--------------------------------------
--- ESP Hack
-local espGUI, espEnabled = nil, false
-local function disableESP()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character then
-			local char = p.Character
-			local highlight = char:FindFirstChild("ESP_Highlight")
-			if highlight then
-				highlight:Destroy()
-			end
-		end
-	end
-	espEnabled = false
-end
-local function enableESP()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character then
-			local char = p.Character
-			if not char:FindFirstChild("ESP_Highlight") then
-				local highlight = Instance.new("Highlight")
-				highlight.Name = "ESP_Highlight"
-				highlight.FillColor = Color3.fromRGB(255,0,0)
-				highlight.Parent = char
-			end
-		end
-	end
-end
-local function createESPGUI()
-	if espGUI then
-		espGUI.Visible = true
-		return
-	end
-	espGUI = Instance.new("Frame", ScreenGui)
-	espGUI.Name = "ESPGUI"
-	espGUI.Size = UDim2.new(0,250,0,150)
-	espGUI.Position = UDim2.new(0.5,-125,0.5,-75)
-	espGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	espGUI.Active = true
-	espGUI.Draggable = true
-	
-	local title = Instance.new("TextLabel", espGUI)
-	title.Size = UDim2.new(1,0,0,30)
-	title.Text = "ESP Hack"
-	title.BackgroundTransparency = 1
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextScaled = true
-	
-	local toggleBtn = Instance.new("TextButton", espGUI)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0.5,0)
-	toggleBtn.Text = "Enable ESP"
-	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	
-	local closeBtn = Instance.new("TextButton", espGUI)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
-	closeBtn.Text = "X"
-	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	closeBtn.MouseButton1Click:Connect(function()
-		espGUI.Visible = false
-		disableESP()
-		toggleBtn.Text = "Enable ESP"
-	end)
-	
-	toggleBtn.MouseButton1Click:Connect(function()
-		espEnabled = not espEnabled
-		if espEnabled then
-			toggleBtn.Text = "Disable ESP"
-			enableESP()
-		else
-			toggleBtn.Text = "Enable ESP"
-			disableESP()
-		end
-	end)
-end
-hackButtons["esp"].MouseButton1Click:Connect(createESPGUI)
-Players.PlayerAdded:Connect(function(p)
-	if p ~= LocalPlayer then
-		p.CharacterAdded:Connect(function(char)
-			if espEnabled then
-				local highlight = Instance.new("Highlight")
-				highlight.Name = "ESP_Highlight"
-				highlight.FillColor = Color3.fromRGB(255,0,0)
-				highlight.Parent = char
-			end
-		end)
-	end
-end)
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Text = "Big Universal Hack Menu"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextScaled = true
 
--------------------------------------
--- Teleport Hack
-local teleportGUI = nil
-local function refreshPlayerList(listFrame)
-	listFrame:ClearAllChildren()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer then
-			local btn = Instance.new("TextButton", listFrame)
-			btn.Size = UDim2.new(1,0,0,30)
-			btn.Text = p.Name
-			btn.TextScaled = true
-			btn.BackgroundColor3 = Color3.fromRGB(50,50,150)
-			btn.TextColor3 = Color3.new(1,1,1)
-			btn.MouseButton1Click:Connect(function()
-				if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and Character then
-					Character:MoveTo(p.Character.HumanoidRootPart.Position)
-				end
-			end)
-		end
-	end
-end
-local function createTeleportGUI()
-	if teleportGUI then
-		teleportGUI.Visible = true
-		return
-	end
-	teleportGUI = Instance.new("Frame", ScreenGui)
-	teleportGUI.Name = "TeleportGUI"
-	teleportGUI.Size = UDim2.new(0,250,0,300)
-	teleportGUI.Position = UDim2.new(0.5,-125,0.5,-150)
-	teleportGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	teleportGUI.Active = true
-	teleportGUI.Draggable = true
-	
-	local title = Instance.new("TextLabel", teleportGUI)
-	title.Size = UDim2.new(1,0,0,30)
-	title.Text = "Teleport Hack"
-	title.BackgroundTransparency = 1
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextScaled = true
-	
-	local refreshBtn = Instance.new("TextButton", teleportGUI)
-	refreshBtn.Size = UDim2.new(0.8,0,0,30)
-	refreshBtn.Position = UDim2.new(0.1,0,0.35,0)
-	refreshBtn.Text = "Refresh List"
-	refreshBtn.TextScaled = true
-	refreshBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	
-	local listFrame = Instance.new("ScrollingFrame", teleportGUI)
-	listFrame.Size = UDim2.new(0.9,0,0.55,0)
-	listFrame.Position = UDim2.new(0.05,0,0.55,0)
-	listFrame.CanvasSize = UDim2.new(0,0,0,30*(#Players:GetPlayers()))
-	listFrame.BackgroundTransparency = 0.5
-	
-	local closeBtn = Instance.new("TextButton", teleportGUI)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
-	closeBtn.Text = "X"
-	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	closeBtn.MouseButton1Click:Connect(function()
-		teleportGUI.Visible = false
-	end)
-	refreshBtn.MouseButton1Click:Connect(function()
-		refreshPlayerList(listFrame)
-	end)
-	refreshPlayerList(listFrame)
-end
-hackButtons["teleport"].MouseButton1Click:Connect(createTeleportGUI)
+local hackList = {
+    {"Fling Hack", "fling"},
+    {"Speed Hack", "speed"},
+    {"ESP Hack", "esp"},
+    {"Teleport Hack", "teleport"},
+    {"Aimbot Hack", "aimbot"},
+    {"Fly Hack", "fly"},
+    {"Infinite Yield", "iy"}
+}
 
--------------------------------------
--- Infinite Yield
-hackButtons["iy"].MouseButton1Click:Connect(function()
-	if not _G.InfiniteYieldLoaded then
-		_G.InfiniteYieldLoaded = true
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-	end
-end)
+local hackButtons = {}
+for i, data in ipairs(hackList) do
+    local button = Instance.new("TextButton", MainFrame)
+    button.Size = UDim2.new(0.9, 0, 0, 30)
+    button.Position = UDim2.new(0.05, 0, 0, 40 + (i-1)*35)
+   
