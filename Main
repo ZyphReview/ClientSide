@@ -31,9 +31,7 @@ local hacks = {
 	{"Fling Hack","fling"},
 	{"Speed Hack","speed"},
 	{"ESP Hack","esp"},
-	{"Invisibility Hack","invis"},
 	{"Teleport Hack","teleport"},
-	{"Autoclicker Hack","autoclicker"},
 	{"Infinite Yield","iy"}
 }
 local hackButtons = {}
@@ -58,6 +56,8 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	HRP = char:WaitForChild("HumanoidRootPart")
 end)
 
+-------------------------------------
+-- Fling Hack
 local flingGUI, flingEnabled = nil, false
 local function disableFling()
 	if HRP and HRP:FindFirstChild("FlingAngularVelocity") then
@@ -77,18 +77,21 @@ local function createFlingGUI()
 	flingGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	flingGUI.Active = true
 	flingGUI.Draggable = true
+	
 	local title = Instance.new("TextLabel", flingGUI)
 	title.Size = UDim2.new(1,0,0,30)
 	title.Text = "Fling Hack"
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.new(1,1,1)
 	title.TextScaled = true
+	
 	local toggleBtn = Instance.new("TextButton", flingGUI)
 	toggleBtn.Size = UDim2.new(0.8,0,0,30)
 	toggleBtn.Position = UDim2.new(0.1,0,0.4,0)
 	toggleBtn.Text = "Enable"
 	toggleBtn.TextScaled = true
 	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	
 	local closeBtn = Instance.new("TextButton", flingGUI)
 	closeBtn.Size = UDim2.new(0,20,0,20)
 	closeBtn.Position = UDim2.new(1,-25,0,5)
@@ -99,16 +102,18 @@ local function createFlingGUI()
 		flingGUI.Visible = false
 		disableFling()
 	end)
+	
 	toggleBtn.MouseButton1Click:Connect(function()
 		flingEnabled = not flingEnabled
 		if flingEnabled then
 			toggleBtn.Text = "Disable"
 			if HRP then
-				local bav = Instance.new("BodyAngularVelocity", HRP)
+				local bav = Instance.new("BodyAngularVelocity")
 				bav.Name = "FlingAngularVelocity"
-				bav.AngularVelocity = Vector3.new(0,50,0)
-				bav.MaxTorque = Vector3.new(0,1e6,0)
+				bav.AngularVelocity = Vector3.new(50,50,50)
+				bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
 				bav.P = 1000
+				bav.Parent = HRP
 			end
 		else
 			toggleBtn.Text = "Enable"
@@ -118,9 +123,11 @@ local function createFlingGUI()
 end
 hackButtons["fling"].MouseButton1Click:Connect(createFlingGUI)
 
+-------------------------------------
+-- Speed Hack
 local speedGUI, speedEnabled = nil, false
 local defaultSpeed = 16
-local hackSpeed = 50
+local hackSpeed = defaultSpeed
 local function disableSpeed()
 	if Humanoid then
 		Humanoid.WalkSpeed = defaultSpeed
@@ -139,18 +146,30 @@ local function createSpeedGUI()
 	speedGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	speedGUI.Active = true
 	speedGUI.Draggable = true
+	
 	local title = Instance.new("TextLabel", speedGUI)
 	title.Size = UDim2.new(1,0,0,30)
 	title.Text = "Speed Hack"
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.new(1,1,1)
 	title.TextScaled = true
+	
+	local speedBox = Instance.new("TextBox", speedGUI)
+	speedBox.Size = UDim2.new(0.8,0,0,30)
+	speedBox.Position = UDim2.new(0.1,0,0.4,0)
+	speedBox.PlaceholderText = "16"
+	speedBox.Text = "16"
+	speedBox.TextScaled = true
+	speedBox.BackgroundColor3 = Color3.fromRGB(60,60,180)
+	speedBox.TextColor3 = Color3.new(1,1,1)
+	
 	local toggleBtn = Instance.new("TextButton", speedGUI)
 	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0.5,0)
+	toggleBtn.Position = UDim2.new(0.1,0,0.75,0)
 	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = speedEnabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
-	toggleBtn.Text = speedEnabled and ("Speed: "..hackSpeed) or ("Speed: "..defaultSpeed)
+	toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	toggleBtn.Text = "Speed: " .. defaultSpeed
+	
 	local closeBtn = Instance.new("TextButton", speedGUI)
 	closeBtn.Size = UDim2.new(0,20,0,20)
 	closeBtn.Position = UDim2.new(1,-25,0,5)
@@ -161,23 +180,27 @@ local function createSpeedGUI()
 		speedGUI.Visible = false
 		disableSpeed()
 		toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-		toggleBtn.Text = "Speed: "..defaultSpeed
+		toggleBtn.Text = "Speed: " .. defaultSpeed
 	end)
+	
 	toggleBtn.MouseButton1Click:Connect(function()
 		speedEnabled = not speedEnabled
 		if speedEnabled then
+			hackSpeed = tonumber(speedBox.Text) or defaultSpeed
 			Humanoid.WalkSpeed = hackSpeed
 			toggleBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
-			toggleBtn.Text = "Speed: "..hackSpeed
+			toggleBtn.Text = "Speed: " .. hackSpeed
 		else
 			Humanoid.WalkSpeed = defaultSpeed
 			toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-			toggleBtn.Text = "Speed: "..defaultSpeed
+			toggleBtn.Text = "Speed: " .. defaultSpeed
 		end
 	end)
 end
 hackButtons["speed"].MouseButton1Click:Connect(createSpeedGUI)
 
+-------------------------------------
+-- ESP Hack
 local espGUI, espEnabled = nil, false
 local function disableESP()
 	for _, p in pairs(Players:GetPlayers()) do
@@ -216,18 +239,21 @@ local function createESPGUI()
 	espGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	espGUI.Active = true
 	espGUI.Draggable = true
+	
 	local title = Instance.new("TextLabel", espGUI)
 	title.Size = UDim2.new(1,0,0,30)
 	title.Text = "ESP Hack"
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.new(1,1,1)
 	title.TextScaled = true
+	
 	local toggleBtn = Instance.new("TextButton", espGUI)
 	toggleBtn.Size = UDim2.new(0.8,0,0,30)
 	toggleBtn.Position = UDim2.new(0.1,0,0.5,0)
 	toggleBtn.Text = "Enable ESP"
 	toggleBtn.TextScaled = true
 	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	
 	local closeBtn = Instance.new("TextButton", espGUI)
 	closeBtn.Size = UDim2.new(0,20,0,20)
 	closeBtn.Position = UDim2.new(1,-25,0,5)
@@ -239,6 +265,7 @@ local function createESPGUI()
 		disableESP()
 		toggleBtn.Text = "Enable ESP"
 	end)
+	
 	toggleBtn.MouseButton1Click:Connect(function()
 		espEnabled = not espEnabled
 		if espEnabled then
@@ -264,70 +291,8 @@ Players.PlayerAdded:Connect(function(p)
 	end
 end)
 
-local invisGUI, invisEnabled = nil, false
-local function disableInvis()
-	setInvisibility(false)
-	invisEnabled = false
-end
-local function setInvisibility(state)
-	if Character then
-		for _, obj in ipairs(Character:GetDescendants()) do
-			if obj:IsA("BasePart") then
-				obj.Transparency = state and 1 or 0
-			elseif obj:IsA("Decal") or obj:IsA("Texture") then
-				obj.Transparency = state and 1 or 0
-			end
-		end
-	end
-end
-local function createInvisGUI()
-	if invisGUI then
-		invisGUI.Visible = true
-		return
-	end
-	invisGUI = Instance.new("Frame", ScreenGui)
-	invisGUI.Name = "InvisGUI"
-	invisGUI.Size = UDim2.new(0,250,0,150)
-	invisGUI.Position = UDim2.new(0.5,-125,0.5,-75)
-	invisGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	invisGUI.Active = true
-	invisGUI.Draggable = true
-	local title = Instance.new("TextLabel", invisGUI)
-	title.Size = UDim2.new(1,0,0,30)
-	title.Text = "Invisibility Hack"
-	title.BackgroundTransparency = 1
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextScaled = true
-	local toggleBtn = Instance.new("TextButton", invisGUI)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0.5,0)
-	toggleBtn.Text = "Enable Invisibility"
-	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	local closeBtn = Instance.new("TextButton", invisGUI)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
-	closeBtn.Text = "X"
-	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	closeBtn.MouseButton1Click:Connect(function()
-		invisGUI.Visible = false
-		disableInvis()
-		toggleBtn.Text = "Enable Invisibility"
-	end)
-	toggleBtn.MouseButton1Click:Connect(function()
-		invisEnabled = not invisEnabled
-		if invisEnabled then
-			toggleBtn.Text = "Disable Invisibility"
-			setInvisibility(true)
-		else
-			toggleBtn.Text = "Enable Invisibility"
-			setInvisibility(false)
-		end
-	end)
-end
-hackButtons["invis"].MouseButton1Click:Connect(createInvisGUI)
-
+-------------------------------------
+-- Teleport Hack
 local teleportGUI = nil
 local function refreshPlayerList(listFrame)
 	listFrame:ClearAllChildren()
@@ -359,23 +324,27 @@ local function createTeleportGUI()
 	teleportGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	teleportGUI.Active = true
 	teleportGUI.Draggable = true
+	
 	local title = Instance.new("TextLabel", teleportGUI)
 	title.Size = UDim2.new(1,0,0,30)
 	title.Text = "Teleport Hack"
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.new(1,1,1)
 	title.TextScaled = true
-	local listFrame = Instance.new("ScrollingFrame", teleportGUI)
-	listFrame.Size = UDim2.new(0.9,0,0.7,0)
-	listFrame.Position = UDim2.new(0.05,0,0.3,0)
-	listFrame.CanvasSize = UDim2.new(0,0,0,30*(#Players:GetPlayers()))
-	listFrame.BackgroundTransparency = 0.5
+	
 	local refreshBtn = Instance.new("TextButton", teleportGUI)
 	refreshBtn.Size = UDim2.new(0.8,0,0,30)
-	refreshBtn.Position = UDim2.new(0.1,0,0.05,0)
+	refreshBtn.Position = UDim2.new(0.1,0,0.35,0)
 	refreshBtn.Text = "Refresh List"
 	refreshBtn.TextScaled = true
 	refreshBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	
+	local listFrame = Instance.new("ScrollingFrame", teleportGUI)
+	listFrame.Size = UDim2.new(0.9,0,0.55,0)
+	listFrame.Position = UDim2.new(0.05,0,0.55,0)
+	listFrame.CanvasSize = UDim2.new(0,0,0,30*(#Players:GetPlayers()))
+	listFrame.BackgroundTransparency = 0.5
+	
 	local closeBtn = Instance.new("TextButton", teleportGUI)
 	closeBtn.Size = UDim2.new(0,20,0,20)
 	closeBtn.Position = UDim2.new(1,-25,0,5)
@@ -392,95 +361,8 @@ local function createTeleportGUI()
 end
 hackButtons["teleport"].MouseButton1Click:Connect(createTeleportGUI)
 
-local autoclickerGUI, autoclickerEnabled = nil, false
-local autoclickerCPS = 10
-local autoclickerToggleBtn = nil
-local function disableAutoclicker()
-	autoclickerEnabled = false
-	if autoclickerToggleBtn then
-		autoclickerToggleBtn.Text = "Enable Autoclicker"
-		autoclickerToggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	end
-end
-local function createAutoclickerGUI()
-	if autoclickerGUI then
-		autoclickerGUI.Visible = true
-		return
-	end
-	autoclickerGUI = Instance.new("Frame", ScreenGui)
-	autoclickerGUI.Name = "AutoclickerGUI"
-	autoclickerGUI.Size = UDim2.new(0,250,0,200)
-	autoclickerGUI.Position = UDim2.new(0.5,-125,0.5,-100)
-	autoclickerGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	autoclickerGUI.Active = true
-	autoclickerGUI.Draggable = true
-	local title = Instance.new("TextLabel", autoclickerGUI)
-	title.Size = UDim2.new(1,0,0,30)
-	title.Text = "Autoclicker Hack"
-	title.BackgroundTransparency = 1
-	title.TextColor3 = Color3.new(1,1,1)
-	title.TextScaled = true
-	local cpsLabel = Instance.new("TextLabel", autoclickerGUI)
-	cpsLabel.Size = UDim2.new(0.4,0,0,30)
-	cpsLabel.Position = UDim2.new(0.1,0,0.4,0)
-	cpsLabel.Text = "CPS:"
-	cpsLabel.TextScaled = true
-	cpsLabel.BackgroundTransparency = 1
-	cpsLabel.TextColor3 = Color3.new(1,1,1)
-	local cpsBox = Instance.new("TextBox", autoclickerGUI)
-	cpsBox.Size = UDim2.new(0.4,0,0,30)
-	cpsBox.Position = UDim2.new(0.55,0,0.4,0)
-	cpsBox.PlaceholderText = tostring(autoclickerCPS)
-	cpsBox.TextScaled = true
-	cpsBox.BackgroundColor3 = Color3.fromRGB(60,60,180)
-	cpsBox.TextColor3 = Color3.new(1,1,1)
-	autoclickerToggleBtn = Instance.new("TextButton", autoclickerGUI)
-	autoclickerToggleBtn.Size = UDim2.new(0.8,0,0,30)
-	autoclickerToggleBtn.Position = UDim2.new(0.1,0,0.7,0)
-	autoclickerToggleBtn.Text = "Enable Autoclicker"
-	autoclickerToggleBtn.TextScaled = true
-	autoclickerToggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	local closeBtn = Instance.new("TextButton", autoclickerGUI)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
-	closeBtn.Text = "X"
-	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-	closeBtn.MouseButton1Click:Connect(function()
-		autoclickerGUI.Visible = false
-		disableAutoclicker()
-	end)
-	autoclickerToggleBtn.MouseButton1Click:Connect(function()
-		autoclickerEnabled = not autoclickerEnabled
-		if autoclickerEnabled then
-			local cps = tonumber(cpsBox.Text)
-			if cps then autoclickerCPS = cps end
-			autoclickerToggleBtn.Text = "Disable Autoclicker"
-			autoclickerToggleBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
-			spawn(function()
-				while autoclickerEnabled do
-					if type(mouse1click) == "function" then
-						mouse1click()
-					else
-						VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, true, game, 0)
-						VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, false, game, 0)
-					end
-					wait(1 / autoclickerCPS)
-				end
-			end)
-		else
-			autoclickerToggleBtn.Text = "Enable Autoclicker"
-			autoclickerToggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
-		end
-	end)
-end
-hackButtons["autoclicker"].MouseButton1Click:Connect(createAutoclickerGUI)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if input.KeyCode == Enum.KeyCode.Escape and autoclickerEnabled then
-		disableAutoclicker()
-	end
-end)
-
+-------------------------------------
+-- Infinite Yield
 hackButtons["iy"].MouseButton1Click:Connect(function()
 	if not _G.InfiniteYieldLoaded then
 		_G.InfiniteYieldLoaded = true
