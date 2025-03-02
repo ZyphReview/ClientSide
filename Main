@@ -20,8 +20,8 @@ ScreenGui.Name = "BigUniversalGUI"
 ScreenGui.Parent = game.CoreGui
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0,300,0,400)
-MainFrame.Position = UDim2.new(0,50,0.5,-200)
+MainFrame.Size = UDim2.new(0,300,0,300)
+MainFrame.Position = UDim2.new(0,50,0.5,-150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -29,7 +29,7 @@ MainFrame.Draggable = true
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1,0,0,40)
 Title.BackgroundTransparency = 1
-Title.Text = "Big Universal Hack Menu"
+Title.Text = "Universal Hacks"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.TextScaled = true
 
@@ -40,7 +40,6 @@ local hackList = {
 	{"Infinite Yield", "iy"},
 	{"Noclip Hack", "noclip"}
 }
-
 local hackButtons = {}
 for i, data in ipairs(hackList) do
 	local button = Instance.new("TextButton", MainFrame)
@@ -76,7 +75,7 @@ local function createSubGUI(titleText, sizeX, sizeY)
 end
 
 ----------------------------------------------------
--- Speed Hack (custom)
+-- Speed Hack
 local speedFrame, speedEnabled = nil, false
 local defaultSpeed = 16
 local function disableSpeed()
@@ -128,15 +127,13 @@ end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
 ----------------------------------------------------
--- ESP Hack (custom)
+-- ESP Hack
 local espFrame, espEnabled = nil, false
 local function disableESP()
 	for _, p in pairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
 			local h = p.Character:FindFirstChild("ESP_Highlight")
-			if h then
-				h:Destroy()
-			end
+			if h then h:Destroy() end
 		end
 	end
 	espEnabled = false
@@ -198,7 +195,7 @@ Players.PlayerAdded:Connect(function(p)
 end)
 
 ----------------------------------------------------
--- Fly Hack (custom with adjustable fly speed)
+-- Fly Hack (custom with adjustable speed)
 local flyFrame, flyEnabled = nil, false
 local flyConnection = nil
 local flySpeed = 50
