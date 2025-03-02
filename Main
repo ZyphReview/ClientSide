@@ -1,6 +1,5 @@
 if _G.BigUniversalScriptLoaded then return end
 _G.BigUniversalScriptLoaded = true
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -14,34 +13,22 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	Humanoid = char:WaitForChild("Humanoid")
 	HRP = char:WaitForChild("HumanoidRootPart")
 end)
-
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BigUniversalGUI"
 ScreenGui.Parent = game.CoreGui
-
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0,300,0,400)
 MainFrame.Position = UDim2.new(0,50,0.5,-200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 MainFrame.Active = true
 MainFrame.Draggable = true
-
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1,0,0,40)
 Title.BackgroundTransparency = 1
 Title.Text = "Big Universal Hack Menu"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.TextScaled = true
-
-local hackList = {
-	{"Fling Hack", "fling"},
-	{"Speed Hack", "speed"},
-	{"ESP Hack", "esp"},
-	{"Teleport Hack", "teleport"},
-	{"Fly Hack", "fly"},
-	{"Infinite Yield", "iy"},
-	{"Noclip Hack", "noclip"}
-}
+local hackList = {{"Fling Hack","fling"},{"Speed Hack","speed"},{"ESP Hack","esp"},{"Teleport Hack","teleport"},{"Fly Hack","fly"},{"Infinite Yield","iy"},{"Noclip Hack","noclip"}}
 local hackButtons = {}
 for i, data in ipairs(hackList) do
 	local button = Instance.new("TextButton", MainFrame)
@@ -53,7 +40,6 @@ for i, data in ipairs(hackList) do
 	button.Text = data[1]
 	hackButtons[data[2]] = button
 end
-
 local function createSubGUI(titleText, sizeX, sizeY)
 	local frame = Instance.new("Frame", ScreenGui)
 	frame.Size = UDim2.new(0, sizeX, 0, sizeY)
@@ -75,34 +61,24 @@ local function createSubGUI(titleText, sizeX, sizeY)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
 	return frame, closeBtn
 end
-
--- New Fling Hack (community style using BodyGyro)
 local flingFrame, flingEnabled = nil, false
-local newFlingConnection = nil
-local function toggleFling()
-	flingEnabled = not flingEnabled
-	if flingEnabled then
-		newFlingConnection = RunService.RenderStepped:Connect(function()
-			if HRP then
-				local bg = HRP:FindFirstChild("FlingGyro")
-				if not bg then
-					bg = Instance.new("BodyGyro", HRP)
-					bg.Name = "FlingGyro"
-					bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
-					bg.P = 3000
-				end
-				bg.CFrame = HRP.CFrame * CFrame.Angles(math.rad(math.random(-5,5)), math.rad(math.random(-5,5)), math.rad(math.random(-5,5)))
-			end
-		end)
-	else
-		if newFlingConnection then
-			newFlingConnection:Disconnect()
-			newFlingConnection = nil
-		end
-		if HRP and HRP:FindFirstChild("FlingGyro") then
-			HRP.FlingGyro:Destroy()
+local function disableFling()
+	if HRP then
+		for _, c in ipairs(HRP:GetChildren()) do
+			if c.Name == "FlingGyro" then c:Destroy() end
 		end
 	end
+	flingEnabled = false
+end
+local function enableFling()
+	flingEnabled = true
+	local rootJoint = HRP:FindFirstChild("RootJoint") or Character:FindFirstChild("RootJoint", true)
+	if rootJoint then rootJoint:Destroy() end
+	local bg = Instance.new("BodyGyro")
+	bg.Name = "FlingGyro"
+	bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
+	bg.P = 3000
+	bg.Parent = HRP
 end
 local function showFlingGUI()
 	if flingFrame then
@@ -118,29 +94,26 @@ local function showFlingGUI()
 	toggleBtn.TextScaled = true
 	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
 	toggleBtn.MouseButton1Click:Connect(function()
-		toggleFling()
+		flingEnabled = not flingEnabled
 		if flingEnabled then
 			toggleBtn.Text = "Disable"
+			enableFling()
 		else
 			toggleBtn.Text = "Enable"
+			disableFling()
 		end
 	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		flingFrame.Visible = false
-		if flingEnabled then
-			toggleFling()
-			toggleBtn.Text = "Enable"
-		end
+		if flingEnabled then toggleBtn.Text = "Enable" end
+		disableFling()
 	end)
 end
 hackButtons["fling"].MouseButton1Click:Connect(showFlingGUI)
-
 local speedFrame, speedEnabled = nil, false
 local defaultSpeed = 16
 local function disableSpeed()
-	if Humanoid then
-		Humanoid.WalkSpeed = defaultSpeed
-	end
+	if Humanoid then Humanoid.WalkSpeed = defaultSpeed end
 	speedEnabled = false
 end
 local function showSpeedGUI()
@@ -184,15 +157,12 @@ local function showSpeedGUI()
 	end)
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
-
 local espFrame, espEnabled = nil, false
 local function disableESP()
 	for _, p in pairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
 			local h = p.Character:FindFirstChild("ESP_Highlight")
-			if h then
-				h:Destroy()
-			end
+			if h then h:Destroy() end
 		end
 	end
 	espEnabled = false
@@ -252,61 +222,12 @@ Players.PlayerAdded:Connect(function(p)
 		end)
 	end
 end)
-
-local teleportFrame = nil
-local function refreshPlayerList(listFrame, listLayout)
-	listFrame:ClearAllChildren()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer then
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1,0,0,30)
-			btn.Text = p.Name
-			btn.TextScaled = true
-			btn.BackgroundColor3 = Color3.fromRGB(50,50,150)
-			btn.TextColor3 = Color3.new(1,1,1)
-			btn.Parent = listFrame
-			btn.MouseButton1Click:Connect(function()
-				if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and Character then
-					Character:MoveTo(p.Character.HumanoidRootPart.Position)
-				end
-			end)
-		end
+hackButtons["teleport"].MouseButton1Click:Connect(function()
+	if not _G.TeleportHackLoaded then
+		_G.TeleportHackLoaded = true
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/SomeUser/UniversalTeleport/main/source"))()
 	end
-	listFrame.CanvasSize = UDim2.new(0,0,0,listLayout.AbsoluteContentSize.Y)
-end
-local function showTeleportGUI()
-	if teleportFrame then
-		teleportFrame.Visible = true
-		return
-	end
-	local frame, closeBtn = createSubGUI("Teleport Hack", 250, 300)
-	teleportFrame = frame
-	local refreshBtn = Instance.new("TextButton", teleportFrame)
-	refreshBtn.Size = UDim2.new(0.8,0,0,30)
-	refreshBtn.Position = UDim2.new(0.1,0,0,40)
-	refreshBtn.Text = "Refresh List"
-	refreshBtn.TextScaled = true
-	refreshBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
-	local listFrame = Instance.new("ScrollingFrame", teleportFrame)
-	listFrame.Size = UDim2.new(0.9,0,0,180)
-	listFrame.Position = UDim2.new(0.05,0,0,80)
-	listFrame.BackgroundTransparency = 0.5
-	listFrame.ScrollBarThickness = 6
-	local listLayout = Instance.new("UIListLayout", listFrame)
-	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		listFrame.CanvasSize = UDim2.new(0,0,0,listLayout.AbsoluteContentSize.Y)
-	end)
-	refreshBtn.MouseButton1Click:Connect(function()
-		refreshPlayerList(listFrame, listLayout)
-	end)
-	refreshPlayerList(listFrame, listLayout)
-	closeBtn.MouseButton1Click:Connect(function()
-		teleportFrame.Visible = false
-	end)
-end
-hackButtons["teleport"].MouseButton1Click:Connect(showTeleportGUI)
-
+end)
 local flyFrame, flyEnabled = nil, false
 local flyConnection = nil
 local flySpeed = 50
@@ -322,24 +243,12 @@ local function enableFly()
 	flyConnection = RunService.Stepped:Connect(function()
 		if not flyEnabled or not HRP then return end
 		local moveVec = Vector3.new(0,0,0)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-			moveVec = moveVec + (workspace.CurrentCamera.CFrame.LookVector * flySpeed)
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-			moveVec = moveVec - (workspace.CurrentCamera.CFrame.LookVector * flySpeed)
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-			moveVec = moveVec - (workspace.CurrentCamera.CFrame.RightVector * flySpeed)
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-			moveVec = moveVec + (workspace.CurrentCamera.CFrame.RightVector * flySpeed)
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-			moveVec = moveVec + Vector3.new(0, flySpeed, 0)
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-			moveVec = moveVec - Vector3.new(0, flySpeed, 0)
-		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + (workspace.CurrentCamera.CFrame.LookVector * flySpeed) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - (workspace.CurrentCamera.CFrame.LookVector * flySpeed) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - (workspace.CurrentCamera.CFrame.RightVector * flySpeed) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + (workspace.CurrentCamera.CFrame.RightVector * flySpeed) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, flySpeed, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec = moveVec - Vector3.new(0, flySpeed, 0) end
 		HRP.Velocity = moveVec
 	end)
 end
@@ -381,7 +290,6 @@ local function showFlyGUI()
 	end)
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
-
 local noclipFrame, noclipEnabled = nil, false
 local noclipConnection = nil
 local function disableNoclip()
@@ -391,18 +299,14 @@ local function disableNoclip()
 		noclipConnection = nil
 	end
 	for _, v in ipairs(Character:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.CanCollide = true
-		end
+		if v:IsA("BasePart") then v.CanCollide = true end
 	end
 end
 local function enableNoclip()
 	noclipEnabled = true
 	noclipConnection = RunService.RenderStepped:Connect(function()
 		for _, v in ipairs(Character:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = false
-			end
+			if v:IsA("BasePart") then v.CanCollide = false end
 		end
 	end)
 end
@@ -436,7 +340,6 @@ local function showNoclipGUI()
 	end)
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
-
 hackButtons["iy"].MouseButton1Click:Connect(function()
 	if not _G.InfiniteYieldLoaded then
 		_G.InfiniteYieldLoaded = true
