@@ -9,10 +9,22 @@ local Mouse = LocalPlayer:GetMouse()
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 local HRP = Character:WaitForChild("HumanoidRootPart")
+local speedValue = 16
+
 LocalPlayer.CharacterAdded:Connect(function(char)
 	Character = char
 	Humanoid = char:WaitForChild("Humanoid")
 	HRP = char:WaitForChild("HumanoidRootPart")
+	wait(0.1)
+	if speedEnabled and Humanoid then
+		Humanoid.WalkSpeed = speedValue
+	end
+	if flyEnabled and HRP then
+		enableFly()
+	end
+	if noclipEnabled then
+		enableNoclip()
+	end
 end)
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -106,7 +118,8 @@ local function showSpeedGUI()
 		speedEnabled = not speedEnabled
 		if speedEnabled then
 			local val = tonumber(speedBox.Text) or 16
-			Humanoid.WalkSpeed = val
+			speedValue = val
+			Humanoid.WalkSpeed = speedValue
 			toggleBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
 			toggleBtn.Text = "Enabled"
 		else
@@ -350,3 +363,22 @@ local function showNoclipGUI()
 	end)
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
+
+local function shutdown()
+	disableSpeed()
+	disableFly()
+	disableNoclip()
+	disableESP()
+	if speedFrame then speedFrame:Destroy() end
+	if espFrame then espFrame:Destroy() end
+	if flyFrame then flyFrame:Destroy() end
+	if noclipFrame then noclipFrame:Destroy() end
+	if MainFrame then MainFrame:Destroy() end
+	if ScreenGui then ScreenGui:Destroy() end
+end
+
+LocalPlayer.AncestryChanged:Connect(function(child, parent)
+	if not parent then
+		shutdown()
+	end
+end)
