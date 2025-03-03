@@ -138,7 +138,6 @@ MainFrame.Active = true
 
 local dragging = false
 local dragInput, dragStart, startPos
-
 local function update(input)
     local delta = input.Position - dragStart
     MainFrame.Position = UDim2.new(
@@ -148,7 +147,6 @@ local function update(input)
         startPos.Y.Offset + delta.Y
     )
 end
-
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -161,13 +159,11 @@ MainFrame.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 MainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         dragInput = input
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         update(input)
@@ -188,7 +184,6 @@ local hackList = {
     {"Infinite Yield", "iy"},
     {"Noclip Hack", "noclip"}
 }
-
 local hackButtons = {}
 for i, data in ipairs(hackList) do
     local button = Instance.new("TextButton", MainFrame)
@@ -208,21 +203,18 @@ local function createSubGUI(titleText, sizeX, sizeY)
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     frame.Active = true
     frame.Draggable = true
-
     local title = Instance.new("TextLabel", frame)
     title.Size = UDim2.new(1, 0, 0, 30)
     title.BackgroundTransparency = 1
     title.Text = titleText
     title.TextColor3 = Color3.new(1, 1, 1)
     title.TextScaled = true
-
     local closeBtn = Instance.new("TextButton", frame)
     closeBtn.Size = UDim2.new(0, 20, 0, 20)
     closeBtn.Position = UDim2.new(1, -25, 0, 5)
     closeBtn.Text = "X"
     closeBtn.TextScaled = true
     closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-
     return frame, closeBtn
 end
 
@@ -244,12 +236,19 @@ do
         return result
     end
 
-    local flashLabel = Instance.new("TextLabel", ScreenGui)
-    flashLabel.Size = UDim2.new(1, 0, 0, 50)
+    local flashFrame = Instance.new("Frame", ScreenGui)
+    flashFrame.Size = UDim2.new(0, 400, 0, 50)
+    flashFrame.Position = UDim2.new(0.5, -200, 1, -60)
+    flashFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    flashFrame.BackgroundTransparency = 0.3
+
+    local flashLabel = Instance.new("TextLabel", flashFrame)
+    flashLabel.Size = UDim2.new(1, 0, 1, 0)
     flashLabel.Position = UDim2.new(0, 0, 0, 0)
     flashLabel.BackgroundTransparency = 1
     flashLabel.RichText = true
     flashLabel.TextScaled = true
+    flashLabel.TextColor3 = Color3.new(1, 1, 1)
     flashLabel.Text = generateRichText(flashText)
 
     spawn(function()
@@ -259,7 +258,7 @@ do
             wait(0.2)
             t = t + 0.2
         end
-        flashLabel:Destroy()
+        flashFrame:Destroy()
     end)
 end
 
@@ -271,7 +270,6 @@ local function showSpeedGUI()
     end
     local frame, closeBtn = createSubGUI("Speed Hack", 250, 150)
     speedFrame = frame
-
     local speedBox = Instance.new("TextBox", speedFrame)
     speedBox.Size = UDim2.new(0.8, 0, 0, 30)
     speedBox.Position = UDim2.new(0.1, 0, 0, 50)
@@ -279,14 +277,12 @@ local function showSpeedGUI()
     speedBox.Text = tostring(speedValue)
     speedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
     speedBox.TextColor3 = Color3.new(1, 1, 1)
-
     local toggleBtn = Instance.new("TextButton", speedFrame)
     toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
     toggleBtn.Position = UDim2.new(0.1, 0, 0, 90)
     toggleBtn.TextScaled = true
     toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     toggleBtn.Text = "Disabled"
-
     toggleBtn.MouseButton1Click:Connect(function()
         speedEnabled = not speedEnabled
         if speedEnabled then
@@ -304,7 +300,6 @@ local function showSpeedGUI()
             toggleBtn.Text = "Disabled"
         end
     end)
-
     closeBtn.MouseButton1Click:Connect(function()
         speedFrame.Visible = false
     end)
@@ -319,14 +314,12 @@ local function showESPGUI()
     end
     local frame, closeBtn = createSubGUI("ESP Hack", 250, 150)
     espFrame = frame
-
     local toggleBtn = Instance.new("TextButton", espFrame)
     toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
     toggleBtn.Position = UDim2.new(0.1, 0, 0, 50)
     toggleBtn.Text = "Enable ESP"
     toggleBtn.TextScaled = true
     toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-
     toggleBtn.MouseButton1Click:Connect(function()
         espEnabled = not espEnabled
         if espEnabled then
@@ -353,7 +346,6 @@ local function showESPGUI()
             end
         end
     end)
-
     closeBtn.MouseButton1Click:Connect(function()
         espFrame.Visible = false
     end)
@@ -379,7 +371,6 @@ local function showFlyGUI()
     end
     local frame, closeBtn = createSubGUI("Fly Hack", 250, 150)
     flyFrame = frame
-
     local speedBox = Instance.new("TextBox", flyFrame)
     speedBox.Size = UDim2.new(0.8, 0, 0, 30)
     speedBox.Position = UDim2.new(0.1, 0, 0, 40)
@@ -387,18 +378,15 @@ local function showFlyGUI()
     speedBox.Text = tostring(flySpeed)
     speedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
     speedBox.TextColor3 = Color3.new(1, 1, 1)
-
     speedBox.FocusLost:Connect(function()
         flySpeed = tonumber(speedBox.Text) or 50
     end)
-
     local toggleBtn = Instance.new("TextButton", flyFrame)
     toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
     toggleBtn.Position = UDim2.new(0.1, 0, 0, 80)
     toggleBtn.Text = "Enable Fly"
     toggleBtn.TextScaled = true
     toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-
     toggleBtn.MouseButton1Click:Connect(function()
         flyEnabled = not flyEnabled
         if flyEnabled then
@@ -410,7 +398,6 @@ local function showFlyGUI()
             disableFly()
         end
     end)
-
     closeBtn.MouseButton1Click:Connect(function()
         flyFrame.Visible = false
     end)
@@ -436,14 +423,12 @@ local function showNoclipGUI()
     end
     local frame, closeBtn = createSubGUI("Noclip Hack", 250, 150)
     noclipFrame = frame
-
     local toggleBtn = Instance.new("TextButton", noclipFrame)
     toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
     toggleBtn.Position = UDim2.new(0.1, 0, 0, 50)
     toggleBtn.Text = "Enable Noclip"
     toggleBtn.TextScaled = true
     toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-
     toggleBtn.MouseButton1Click:Connect(function()
         noclipEnabled = not noclipEnabled
         if noclipEnabled then
@@ -454,7 +439,6 @@ local function showNoclipGUI()
             disableNoclip()
         end
     end)
-
     closeBtn.MouseButton1Click:Connect(function()
         noclipFrame.Visible = false
     end)
@@ -497,3 +481,4 @@ LocalPlayer.AncestryChanged:Connect(function(child, parent)
         shutdown()
     end
 end)
+
