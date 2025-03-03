@@ -6,10 +6,105 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-local HRP = Character:WaitForChild("HumanoidRootPart")
+
+local speedEnabled = false
+local flyEnabled = false
+local noclipEnabled = false
+local espEnabled = false
 local speedValue = 16
+local flySpeed = 50
+
+local Character, Humanoid, HRP
+Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+Humanoid = Character:FindFirstChildOfClass("Humanoid")
+HRP = Character:WaitForChild("HumanoidRootPart")
+
+local flyConnection, noclipConnection
+
+local function enableFly()
+	flyEnabled = true
+	if HRP then
+		local bg = Instance.new("BodyGyro", HRP)
+		bg.Name = "FlyBG"
+		bg.P = 90000
+		bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		bg.D = 1000
+		local bv = Instance.new("BodyVelocity", HRP)
+		bv.Name = "FlyBV"
+		bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		bv.Velocity = Vector3.new(0, 0, 0)
+		flyConnection = RunService.Heartbeat:Connect(function()
+			if not flyEnabled or not HRP then return end
+			local moveVec = Vector3.new(0, 0, 0)
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+				moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+				moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+				moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+				moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+				moveVec = moveVec + Vector3.new(0, 1, 0)
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+				moveVec = moveVec - Vector3.new(0, 1, 0)
+			end
+			local finalVec = Vector3.new(0, 0, 0)
+			if moveVec.Magnitude > 0 then
+				finalVec = moveVec.Unit * flySpeed
+			end
+			bv.Velocity = finalVec
+			bg.CFrame = workspace.CurrentCamera.CFrame
+		end)
+	end
+end
+
+local function disableFly()
+	flyEnabled = false
+	if flyConnection then
+		flyConnection:Disconnect()
+		flyConnection = nil
+	end
+	if HRP then
+		local bg = HRP:FindFirstChild("FlyBG")
+		if bg then bg:Destroy() end
+		local bv = HRP:FindFirstChild("FlyBV")
+		if bv then bv:Destroy() end
+	end
+end
+
+local function enableNoclip()
+	noclipEnabled = true
+	noclipConnection = RunService.RenderStepped:Connect(function()
+		if Character then
+			for _, part in ipairs(Character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
+				end
+			end
+		end
+	end)
+end
+
+local function disableNoclip()
+	noclipEnabled = false
+	if noclipConnection then
+		noclipConnection:Disconnect()
+		noclipConnection = nil
+	end
+	if Character then
+		for _, part in ipairs(Character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = true
+			end
+		end
+	end
+end
 
 LocalPlayer.CharacterAdded:Connect(function(char)
 	Character = char
@@ -32,17 +127,17 @@ ScreenGui.Name = "BigUniversalGUI"
 ScreenGui.Parent = game.CoreGui
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0,300,0,300)
-MainFrame.Position = UDim2.new(0,50,0.5,-150)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+MainFrame.Size = UDim2.new(0, 300, 0, 300)
+MainFrame.Position = UDim2.new(0, 50, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1,0,0,40)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
 Title.Text = "Universal Hacks"
-Title.TextColor3 = Color3.new(1,1,1)
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.TextScaled = true
 
 local hackList = {
@@ -55,10 +150,10 @@ local hackList = {
 local hackButtons = {}
 for i, data in ipairs(hackList) do
 	local button = Instance.new("TextButton", MainFrame)
-	button.Size = UDim2.new(0.9,0,0,30)
-	button.Position = UDim2.new(0.05,0,0,40 + (i-1)*35)
-	button.BackgroundColor3 = Color3.fromRGB(50,50,150)
-	button.TextColor3 = Color3.new(1,1,1)
+	button.Size = UDim2.new(0.9, 0, 0, 30)
+	button.Position = UDim2.new(0.05, 0, 0, 40 + (i - 1) * 35)
+	button.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+	button.TextColor3 = Color3.new(1, 1, 1)
 	button.TextScaled = true
 	button.Text = data[1]
 	hackButtons[data[2]] = button
@@ -67,33 +162,26 @@ end
 local function createSubGUI(titleText, sizeX, sizeY)
 	local frame = Instance.new("Frame", ScreenGui)
 	frame.Size = UDim2.new(0, sizeX, 0, sizeY)
-	frame.Position = UDim2.new(0.5, -sizeX/2, 0.5, -sizeY/2)
-	frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	frame.Position = UDim2.new(0.5, -sizeX / 2, 0.5, -sizeY / 2)
+	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	frame.Active = true
 	frame.Draggable = true
 	local title = Instance.new("TextLabel", frame)
-	title.Size = UDim2.new(1,0,0,30)
+	title.Size = UDim2.new(1, 0, 0, 30)
 	title.BackgroundTransparency = 1
 	title.Text = titleText
-	title.TextColor3 = Color3.new(1,1,1)
+	title.TextColor3 = Color3.new(1, 1, 1)
 	title.TextScaled = true
 	local closeBtn = Instance.new("TextButton", frame)
-	closeBtn.Size = UDim2.new(0,20,0,20)
-	closeBtn.Position = UDim2.new(1,-25,0,5)
+	closeBtn.Size = UDim2.new(0, 20, 0, 20)
+	closeBtn.Position = UDim2.new(1, -25, 0, 5)
 	closeBtn.Text = "X"
 	closeBtn.TextScaled = true
-	closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 	return frame, closeBtn
 end
 
-local speedFrame, speedEnabled = nil, false
-local defaultSpeed = 16
-local function disableSpeed()
-	if Humanoid then
-		Humanoid.WalkSpeed = defaultSpeed
-	end
-	speedEnabled = false
-end
+local speedFrame
 local function showSpeedGUI()
 	if speedFrame then
 		speedFrame.Visible = true
@@ -102,64 +190,50 @@ local function showSpeedGUI()
 	local frame, closeBtn = createSubGUI("Speed Hack", 250, 150)
 	speedFrame = frame
 	local speedBox = Instance.new("TextBox", speedFrame)
-	speedBox.Size = UDim2.new(0.8,0,0,30)
-	speedBox.Position = UDim2.new(0.1,0,0,50)
+	speedBox.Size = UDim2.new(0.8, 0, 0, 30)
+	speedBox.Position = UDim2.new(0.1, 0, 0, 50)
 	speedBox.TextScaled = true
-	speedBox.Text = "16"
-	speedBox.BackgroundColor3 = Color3.fromRGB(60,60,180)
-	speedBox.TextColor3 = Color3.new(1,1,1)
+	speedBox.Text = tostring(speedValue)
+	speedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
+	speedBox.TextColor3 = Color3.new(1, 1, 1)
 	local toggleBtn = Instance.new("TextButton", speedFrame)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0,90)
+	toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
+	toggleBtn.Position = UDim2.new(0.1, 0, 0, 90)
 	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 	toggleBtn.Text = "Disabled"
 	toggleBtn.MouseButton1Click:Connect(function()
 		speedEnabled = not speedEnabled
 		if speedEnabled then
-			local val = tonumber(speedBox.Text) or 16
-			speedValue = val
-			Humanoid.WalkSpeed = speedValue
-			toggleBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
+			speedValue = tonumber(speedBox.Text) or 16
+			if Humanoid then
+				Humanoid.WalkSpeed = speedValue
+			end
+			toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 			toggleBtn.Text = "Enabled"
 		else
-			Humanoid.WalkSpeed = defaultSpeed
-			toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+			if Humanoid then
+				Humanoid.WalkSpeed = 16
+			end
+			toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 			toggleBtn.Text = "Disabled"
 		end
 	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		speedFrame.Visible = false
-		disableSpeed()
-		toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+		if speedEnabled then
+			speedEnabled = false
+			if Humanoid then
+				Humanoid.WalkSpeed = 16
+			end
+		end
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 		toggleBtn.Text = "Disabled"
 	end)
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
-local espFrame, espEnabled = nil, false
-local function disableESP()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character then
-			local h = p.Character:FindFirstChild("ESP_Highlight")
-			if h then h:Destroy() end
-		end
-	end
-	espEnabled = false
-end
-local function enableESP()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character then
-			if not p.Character:FindFirstChild("ESP_Highlight") then
-				local highlight = Instance.new("Highlight")
-				highlight.Name = "ESP_Highlight"
-				highlight.FillColor = Color3.fromRGB(255,0,0)
-				highlight.Parent = p.Character
-			end
-		end
-	end
-	espEnabled = true
-end
+local espFrame
 local function showESPGUI()
 	if espFrame then
 		espFrame.Visible = true
@@ -168,24 +242,43 @@ local function showESPGUI()
 	local frame, closeBtn = createSubGUI("ESP Hack", 250, 150)
 	espFrame = frame
 	local toggleBtn = Instance.new("TextButton", espFrame)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0,50)
+	toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
+	toggleBtn.Position = UDim2.new(0.1, 0, 0, 50)
 	toggleBtn.Text = "Enable ESP"
 	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
 	toggleBtn.MouseButton1Click:Connect(function()
 		espEnabled = not espEnabled
 		if espEnabled then
 			toggleBtn.Text = "Disable ESP"
-			enableESP()
+			for _, p in pairs(Players:GetPlayers()) do
+				if p ~= LocalPlayer and p.Character then
+					if not p.Character:FindFirstChild("ESP_Highlight") then
+						local highlight = Instance.new("Highlight")
+						highlight.Name = "ESP_Highlight"
+						highlight.FillColor = Color3.fromRGB(255, 0, 0)
+						highlight.Parent = p.Character
+					end
+				end
+			end
 		else
 			toggleBtn.Text = "Enable ESP"
-			disableESP()
+			for _, p in pairs(Players:GetPlayers()) do
+				if p ~= LocalPlayer and p.Character then
+					local h = p.Character:FindFirstChild("ESP_Highlight")
+					if h then h:Destroy() end
+				end
+			end
 		end
 	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		espFrame.Visible = false
-		disableESP()
+		for _, p in pairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character then
+				local h = p.Character:FindFirstChild("ESP_Highlight")
+				if h then h:Destroy() end
+			end
+		end
 		toggleBtn.Text = "Enable ESP"
 	end)
 end
@@ -196,70 +289,14 @@ Players.PlayerAdded:Connect(function(p)
 			if espEnabled then
 				local highlight = Instance.new("Highlight")
 				highlight.Name = "ESP_Highlight"
-				highlight.FillColor = Color3.fromRGB(255,0,0)
+				highlight.FillColor = Color3.fromRGB(255, 0, 0)
 				highlight.Parent = char
 			end
 		end)
 	end
 end)
 
-local flyFrame, flyEnabled = nil, false
-local flySpeed = 50
-local flyConnection = nil
-local flyBG, flyBV
-local function disableFly()
-	flyEnabled = false
-	if flyConnection then
-		flyConnection:Disconnect()
-		flyConnection = nil
-	end
-	if flyBG then
-		flyBG:Destroy()
-		flyBG = nil
-	end
-	if flyBV then
-		flyBV:Destroy()
-		flyBV = nil
-	end
-end
-local function enableFly()
-	flyEnabled = true
-	flyBG = Instance.new("BodyGyro", HRP)
-	flyBG.P = 90000
-	flyBG.MaxTorque = Vector3.new(9e9,9e9,9e9)
-	flyBG.D = 1000
-	flyBV = Instance.new("BodyVelocity", HRP)
-	flyBV.MaxForce = Vector3.new(9e9,9e9,9e9)
-	flyBV.Velocity = Vector3.new(0,0,0)
-	flyConnection = RunService.Heartbeat:Connect(function()
-		if not flyEnabled or not HRP then return end
-		local moveVec = Vector3.new(0,0,0)
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-			moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-			moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-			moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-			moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-			moveVec = moveVec + Vector3.new(0,1,0)
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-			moveVec = moveVec - Vector3.new(0,1,0)
-		end
-		local finalVec = Vector3.new(0,0,0)
-		if moveVec.Magnitude > 0 then
-			finalVec = moveVec.Unit * flySpeed
-		end
-		flyBV.Velocity = finalVec
-		flyBG.CFrame = workspace.CurrentCamera.CFrame
-	end)
-end
+local flyFrame
 local function showFlyGUI()
 	if flyFrame then
 		flyFrame.Visible = true
@@ -268,21 +305,21 @@ local function showFlyGUI()
 	local frame, closeBtn = createSubGUI("Fly Hack", 250, 150)
 	flyFrame = frame
 	local speedBox = Instance.new("TextBox", flyFrame)
-	speedBox.Size = UDim2.new(0.8,0,0,30)
-	speedBox.Position = UDim2.new(0.1,0,0,40)
+	speedBox.Size = UDim2.new(0.8, 0, 0, 30)
+	speedBox.Position = UDim2.new(0.1, 0, 0, 40)
 	speedBox.TextScaled = true
 	speedBox.Text = tostring(flySpeed)
-	speedBox.BackgroundColor3 = Color3.fromRGB(60,60,180)
-	speedBox.TextColor3 = Color3.new(1,1,1)
-	speedBox.FocusLost:Connect(function(enterPressed)
+	speedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
+	speedBox.TextColor3 = Color3.new(1, 1, 1)
+	speedBox.FocusLost:Connect(function()
 		flySpeed = tonumber(speedBox.Text) or 50
 	end)
 	local toggleBtn = Instance.new("TextButton", flyFrame)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0,80)
+	toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
+	toggleBtn.Position = UDim2.new(0.1, 0, 0, 80)
 	toggleBtn.Text = "Enable Fly"
 	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
 	toggleBtn.MouseButton1Click:Connect(function()
 		flyEnabled = not flyEnabled
 		if flyEnabled then
@@ -309,30 +346,7 @@ hackButtons["iy"].MouseButton1Click:Connect(function()
 	end
 end)
 
-local noclipFrame, noclipEnabled = nil, false
-local noclipConnection = nil
-local function disableNoclip()
-	noclipEnabled = false
-	if noclipConnection then
-		noclipConnection:Disconnect()
-		noclipConnection = nil
-	end
-	for _, v in ipairs(Character:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.CanCollide = true
-		end
-	end
-end
-local function enableNoclip()
-	noclipEnabled = true
-	noclipConnection = RunService.RenderStepped:Connect(function()
-		for _, v in ipairs(Character:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = false
-			end
-		end
-	end)
-end
+local noclipFrame
 local function showNoclipGUI()
 	if noclipFrame then
 		noclipFrame.Visible = true
@@ -341,11 +355,11 @@ local function showNoclipGUI()
 	local frame, closeBtn = createSubGUI("Noclip Hack", 250, 150)
 	noclipFrame = frame
 	local toggleBtn = Instance.new("TextButton", noclipFrame)
-	toggleBtn.Size = UDim2.new(0.8,0,0,30)
-	toggleBtn.Position = UDim2.new(0.1,0,0,50)
+	toggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
+	toggleBtn.Position = UDim2.new(0.1, 0, 0, 50)
 	toggleBtn.Text = "Enable Noclip"
 	toggleBtn.TextScaled = true
-	toggleBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
 	toggleBtn.MouseButton1Click:Connect(function()
 		noclipEnabled = not noclipEnabled
 		if noclipEnabled then
@@ -365,10 +379,14 @@ end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
 
 local function shutdown()
-	disableSpeed()
 	disableFly()
 	disableNoclip()
-	disableESP()
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Character then
+			local h = p.Character:FindFirstChild("ESP_Highlight")
+			if h then h:Destroy() end
+		end
+	end
 	if speedFrame then speedFrame:Destroy() end
 	if espFrame then espFrame:Destroy() end
 	if flyFrame then flyFrame:Destroy() end
