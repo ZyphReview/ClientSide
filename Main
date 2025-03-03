@@ -18,6 +18,7 @@ local Character, Humanoid, HRP
 Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 Humanoid = Character:FindFirstChildOfClass("Humanoid")
 HRP = Character:WaitForChild("HumanoidRootPart")
+while not workspace.CurrentCamera do wait() end
 
 local flyConnection, noclipConnection
 
@@ -329,6 +330,7 @@ local function showESPGUI()
 		espFrame.Visible = false
 	end)
 end
+hackButtons["esp"].MouseButton1Connect = hackButtons["esp"].MouseButton1Click
 hackButtons["esp"].MouseButton1Click:Connect(showESPGUI)
 Players.PlayerAdded:Connect(function(p)
 	if p ~= LocalPlayer then
@@ -387,7 +389,11 @@ hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
 hackButtons["iy"].MouseButton1Click:Connect(function()
 	if not _G.InfiniteYieldLoaded then
 		_G.InfiniteYieldLoaded = true
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+		if game.HttpGet then
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+		else
+			warn("HttpGet not available")
+		end
 	end
 end)
 
