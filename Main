@@ -438,4 +438,8 @@ local function shutdown()
 	if ScreenGui then ScreenGui:Destroy() end
 end
 
-LocalPlayer.AncestryChanged:Connect(function(child,
+LocalPlayer.AncestryChanged:Connect(function(child, parent)
+	if not parent then
+		shutdown()
+	end
+end)
