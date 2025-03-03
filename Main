@@ -74,8 +74,6 @@ local function createSubGUI(titleText, sizeX, sizeY)
 	return frame, closeBtn
 end
 
-----------------------------------------------------
--- Speed Hack
 local speedFrame, speedEnabled = nil, false
 local defaultSpeed = 16
 local function disableSpeed()
@@ -126,8 +124,6 @@ local function showSpeedGUI()
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
-----------------------------------------------------
--- ESP Hack
 local espFrame, espEnabled = nil, false
 local function disableESP()
 	for _, p in pairs(Players:GetPlayers()) do
@@ -194,42 +190,61 @@ Players.PlayerAdded:Connect(function(p)
 	end
 end)
 
-----------------------------------------------------
--- Fly Hack (custom with adjustable speed)
 local flyFrame, flyEnabled = nil, false
-local flyConnection = nil
 local flySpeed = 50
+local flyConnection = nil
+local flyBG, flyBV
 local function disableFly()
 	flyEnabled = false
 	if flyConnection then
 		flyConnection:Disconnect()
 		flyConnection = nil
 	end
+	if flyBG then
+		flyBG:Destroy()
+		flyBG = nil
+	end
+	if flyBV then
+		flyBV:Destroy()
+		flyBV = nil
+	end
 end
 local function enableFly()
 	flyEnabled = true
-	flyConnection = RunService.Stepped:Connect(function()
+	flyBG = Instance.new("BodyGyro", HRP)
+	flyBG.P = 90000
+	flyBG.MaxTorque = Vector3.new(9e9,9e9,9e9)
+	flyBG.D = 1000
+	flyBV = Instance.new("BodyVelocity", HRP)
+	flyBV.MaxForce = Vector3.new(9e9,9e9,9e9)
+	flyBV.Velocity = Vector3.new(0,0,0)
+	flyConnection = RunService.Heartbeat:Connect(function()
 		if not flyEnabled or not HRP then return end
 		local moveVec = Vector3.new(0,0,0)
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-			moveVec = moveVec + (workspace.CurrentCamera.CFrame.LookVector * flySpeed)
+			moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-			moveVec = moveVec - (workspace.CurrentCamera.CFrame.LookVector * flySpeed)
+			moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-			moveVec = moveVec - (workspace.CurrentCamera.CFrame.RightVector * flySpeed)
+			moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-			moveVec = moveVec + (workspace.CurrentCamera.CFrame.RightVector * flySpeed)
+			moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-			moveVec = moveVec + Vector3.new(0, flySpeed, 0)
+			moveVec = moveVec + Vector3.new(0,1,0)
 		end
 		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-			moveVec = moveVec - Vector3.new(0, flySpeed, 0)
+			moveVec = moveVec - Vector3.new(0,1,0)
 		end
-		HRP.Velocity = moveVec
+		local finalVec = Vector3.new(0,0,0)
+		if moveVec.Magnitude > 0 then
+			finalVec = moveVec.Unit * flySpeed
+		end
+		flyBV.Velocity = finalVec
+		flyBG.CFrame = workspace.CurrentCamera.CFrame
 	end)
 end
 local function showFlyGUI()
@@ -246,6 +261,9 @@ local function showFlyGUI()
 	speedBox.Text = tostring(flySpeed)
 	speedBox.BackgroundColor3 = Color3.fromRGB(60,60,180)
 	speedBox.TextColor3 = Color3.new(1,1,1)
+	speedBox.FocusLost:Connect(function(enterPressed)
+		flySpeed = tonumber(speedBox.Text) or 50
+	end)
 	local toggleBtn = Instance.new("TextButton", flyFrame)
 	toggleBtn.Size = UDim2.new(0.8,0,0,30)
 	toggleBtn.Position = UDim2.new(0.1,0,0,80)
@@ -271,8 +289,6 @@ local function showFlyGUI()
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
 
-----------------------------------------------------
--- Infinite Yield (external)
 hackButtons["iy"].MouseButton1Click:Connect(function()
 	if not _G.InfiniteYieldLoaded then
 		_G.InfiniteYieldLoaded = true
@@ -280,8 +296,6 @@ hackButtons["iy"].MouseButton1Click:Connect(function()
 	end
 end)
 
-----------------------------------------------------
--- Noclip Hack (custom)
 local noclipFrame, noclipEnabled = nil, false
 local noclipConnection = nil
 local function disableNoclip()
