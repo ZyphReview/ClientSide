@@ -1,23 +1,28 @@
 if _G.BigUniversalScriptLoaded then return end
 _G.BigUniversalScriptLoaded = true
+
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+
 local speedEnabled = false
 local flyEnabled = false
 local noclipEnabled = false
 local espEnabled = false
 local speedValue = 16
 local flySpeed = 50
+
 local Character, Humanoid, HRP
 Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 Humanoid = Character:FindFirstChildOfClass("Humanoid")
 HRP = Character:WaitForChild("HumanoidRootPart")
 while not workspace.CurrentCamera do wait() end
+
 local flyConnection, noclipConnection
+
 local function enableFly()
 	flyEnabled = true
 	if HRP then
@@ -60,6 +65,7 @@ local function enableFly()
 		end)
 	end
 end
+
 local function disableFly()
 	flyEnabled = false
 	if flyConnection then
@@ -73,6 +79,7 @@ local function disableFly()
 		if bv then bv:Destroy() end
 	end
 end
+
 local function enableNoclip()
 	noclipEnabled = true
 	noclipConnection = RunService.RenderStepped:Connect(function()
@@ -85,6 +92,7 @@ local function enableNoclip()
 		end
 	end)
 end
+
 local function disableNoclip()
 	noclipEnabled = false
 	if noclipConnection then
@@ -99,6 +107,7 @@ local function disableNoclip()
 		end
 	end
 end
+
 LocalPlayer.CharacterAdded:Connect(function(char)
 	Character = char
 	Humanoid = char:WaitForChild("Humanoid")
@@ -114,22 +123,22 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		enableNoclip()
 	end
 end)
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BigUniversalGUI"
 ScreenGui.Parent = game.CoreGui
+
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 300, 0, 300)
 MainFrame.Position = UDim2.new(0, 50, 0.5, -150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.Active = true
+
 local originalSize = MainFrame.Size
 local originalPosition = MainFrame.Position
+
 local dragging = false
 local dragInput, dragStart, startPos
-local function update(input)
-	local delta = input.Position - dragStart
-	MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
 MainFrame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true
@@ -138,6 +147,7 @@ MainFrame.InputBegan:Connect(function(input)
 		input.Changed:Connect(function()
 			if input.UserInputState == Enum.UserInputState.End then
 				dragging = false
+				originalPosition = MainFrame.Position
 			end
 		end)
 	end
@@ -149,20 +159,27 @@ MainFrame.InputChanged:Connect(function(input)
 end)
 UserInputService.InputChanged:Connect(function(input)
 	if input == dragInput and dragging then
-		update(input)
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end)
+
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
 Title.Text = "Universal Hacks"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.TextScaled = true
+
 local MinimizeBtn = Instance.new("TextButton", MainFrame)
 MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
 MinimizeBtn.Position = UDim2.new(1, -35, 0, 5)
-MinimizeBtn.Text = "_"
-MinimizeBtn.BackgroundTransparency = 0.5
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+MinimizeBtn.Text = "X"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.Font = Enum.Font.SourceSansBold
+MinimizeBtn.TextScaled = true
+
 local hackList = {
 	{"Speed Hack", "speed"},
 	{"ESP Hack", "esp"},
@@ -181,6 +198,7 @@ for i, data in ipairs(hackList) do
 	button.Text = data[1]
 	hackButtons[data[2]] = button
 end
+
 local function createSubGUI(titleText, sizeX, sizeY)
 	local frame = Instance.new("Frame", ScreenGui)
 	frame.Size = UDim2.new(0, sizeX, 0, sizeY)
@@ -202,6 +220,7 @@ local function createSubGUI(titleText, sizeX, sizeY)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 	return frame, closeBtn
 end
+
 do
 	local flashText = "Universal Hacks Loaded"
 	local purpleShades = {"#8A2BE2", "#9400D3", "#9932CC", "#BA55D3", "#9370DB", "#D8BFD8"}
@@ -241,6 +260,7 @@ do
 		flashFrame:Destroy()
 	end)
 end
+
 local speedFrame
 local function showSpeedGUI()
 	if speedFrame then
@@ -284,6 +304,7 @@ local function showSpeedGUI()
 	end)
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
+
 local espFrame
 local function showESPGUI()
 	if espFrame then
@@ -339,6 +360,7 @@ Players.PlayerAdded:Connect(function(p)
 		end
 	end)
 end)
+
 local flyFrame
 local function showFlyGUI()
 	if flyFrame then
@@ -379,6 +401,7 @@ local function showFlyGUI()
 	end)
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
+
 hackButtons["iy"].MouseButton1Click:Connect(function()
 	if not _G.InfiniteYieldLoaded then
 		_G.InfiniteYieldLoaded = true
@@ -389,6 +412,7 @@ hackButtons["iy"].MouseButton1Click:Connect(function()
 		end
 	end
 end)
+
 local noclipFrame
 local function showNoclipGUI()
 	if noclipFrame then
@@ -418,6 +442,7 @@ local function showNoclipGUI()
 	end)
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
+
 local function shutdown()
 	disableFly()
 	disableNoclip()
@@ -436,27 +461,38 @@ local function shutdown()
 	if MainFrame then MainFrame:Destroy() end
 	if ScreenGui then ScreenGui:Destroy() end
 end
+
 LocalPlayer.AncestryChanged:Connect(function(child, parent)
 	if not parent then
 		shutdown()
 	end
 end)
+
 MinimizeBtn.MouseButton1Click:Connect(function()
+	originalPosition = MainFrame.Position
+	originalSize = MainFrame.Size
 	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0.5, -50, 0, 10)})
+	local tween = TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(0.5, -25, 0, 10)})
 	tween:Play()
 	tween.Completed:Connect(function()
 		MainFrame.Visible = false
 		local MinimizedButton = Instance.new("ImageButton", ScreenGui)
-		MinimizedButton.Size = UDim2.new(0, 100, 0, 100)
-		MinimizedButton.Position = UDim2.new(0.5, -50, 0, 10)
-		MinimizedButton.Image = "rbxassetid://6031075933"
-		MinimizedButton.BackgroundTransparency = 0.3
+		MinimizedButton.Name = "MinimizedButton"
+		MinimizedButton.Size = UDim2.new(0, 50, 0, 50)
+		MinimizedButton.Position = UDim2.new(0.5, -25, 0, 10)
+		MinimizedButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+		MinimizedButton.Image = ""
+		MinimizedButton.Rotation = 45
+		local cutout = Instance.new("Frame", MinimizedButton)
+		cutout.Size = UDim2.new(0, 25, 0, 25)
+		cutout.Position = UDim2.new(0.5, -12.5, 0.5, -12.5)
+		cutout.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		cutout.Rotation = -45
+		cutout.BorderSizePixel = 0
 		MinimizedButton.MouseButton1Click:Connect(function()
 			MinimizedButton:Destroy()
 			MainFrame.Visible = true
-			local tweenInfo2 = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-			local tween2 = TweenService:Create(MainFrame, tweenInfo2, {Size = originalSize, Position = originalPosition})
+			local tween2 = TweenService:Create(MainFrame, tweenInfo, {Size = originalSize, Position = originalPosition})
 			tween2:Play()
 		end)
 	end)
