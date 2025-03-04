@@ -3,10 +3,12 @@
 if _G.BigUniversalScriptLoaded then return end
 _G.BigUniversalScriptLoaded = true
 
+-- Services and Variables
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
 local LP = Players.LocalPlayer
 local Mouse = LP:GetMouse()
 
@@ -18,120 +20,143 @@ local Hum = Char:FindFirstChildOfClass("Humanoid")
 local HRP = Char:WaitForChild("HumanoidRootPart")
 while not workspace.CurrentCamera do wait() end
 
-local flyConnection, noclipConnection
-local shuttingDown = false  -- flag to signal shutdown
+-- Connection tracking table
+local connections = {}
+local function trackConnection(conn)
+    table.insert(connections, conn)
+    return conn
+end
+
+-- Flags for safe shutdown
+local shuttingDown = false
 local shutdownCalled = false
+
+-- Utility: Disconnect all tracked connections
+local function disconnectAll()
+    for _, conn in ipairs(connections) do
+        if conn.Connected then
+            pcall(function() conn:Disconnect() end)
+        end
+    end
+    connections = {}
+end
 
 --[[
     Fly Functions
 --]]
+local flyConnection
 local function enableFly()
-	flyEnabled = true
-	if HRP then
-		local bg = Instance.new("BodyGyro")
-		bg.Name = "FlyBG"
-		bg.Parent = HRP
-		bg.P = 90000
-		bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-		bg.D = 1000
-		local bv = Instance.new("BodyVelocity")
-		bv.Name = "FlyBV"
-		bv.Parent = HRP
-		bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-		bv.Velocity = Vector3.new(0, 0, 0)
-		flyConnection = RunService.Heartbeat:Connect(function()
-			if shuttingDown then return end
-			if not flyEnabled or not HRP or not HRP.Parent then return end
-			local cam = workspace.CurrentCamera
-			if not cam then return end
-			local camCFrame = cam.CFrame
-			local moveVec = Vector3.new()
-			if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camCFrame.LookVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camCFrame.LookVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - camCFrame.RightVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + camCFrame.RightVector end
-			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec = moveVec - Vector3.new(0, 1, 0) end
-			local finalVec = moveVec.Magnitude > 0 and moveVec.Unit * flySpeed or Vector3.new()
-			bv.Velocity = finalVec
-			bg.CFrame = camCFrame
-		end)
-	end
+    if shuttingDown then return end
+    flyEnabled = true
+    if HRP then
+        local bg = Instance.new("BodyGyro")
+        bg.Name = "FlyBG"
+        bg.Parent = HRP
+        bg.P = 90000
+        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.D = 1000
+
+        local bv = Instance.new("BodyVelocity")
+        bv.Name = "FlyBV"
+        bv.Parent = HRP
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        bv.Velocity = Vector3.new(0, 0, 0)
+
+        flyConnection = trackConnection(RunService.Heartbeat:Connect(function()
+            if shuttingDown then return end
+            if not flyEnabled or not HRP or not HRP.Parent then return end
+            local cam = workspace.CurrentCamera
+            if not cam then return end
+            local camCFrame = cam.CFrame
+            local moveVec = Vector3.new()
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camCFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camCFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - camCFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + camCFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0, 1, 0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec = moveVec - Vector3.new(0, 1, 0) end
+            local finalVec = moveVec.Magnitude > 0 and moveVec.Unit * flySpeed or Vector3.new()
+            bv.Velocity = finalVec
+            bg.CFrame = camCFrame
+        end))
+    end
 end
 
 local function disableFly()
-	flyEnabled = false
-	if flyConnection then
-		flyConnection:Disconnect()
-		flyConnection = nil
-	end
-	if HRP then
-		local bg = HRP:FindFirstChild("FlyBG")
-		if bg then bg:Destroy() end
-		local bv = HRP:FindFirstChild("FlyBV")
-		if bv then bv:Destroy() end
-	end
+    flyEnabled = false
+    if flyConnection then
+        pcall(function() flyConnection:Disconnect() end)
+        flyConnection = nil
+    end
+    if HRP then
+        local bg = HRP:FindFirstChild("FlyBG")
+        if bg then bg:Destroy() end
+        local bv = HRP:FindFirstChild("FlyBV")
+        if bv then bv:Destroy() end
+    end
 end
 
 --[[
     Noclip Functions
 --]]
+local noclipConnection
 local function enableNoclip()
-	noclipEnabled = true
-	noclipConnection = RunService.RenderStepped:Connect(function()
-		if shuttingDown then return end
-		if Char and Char.Parent then
-			for _, v in ipairs(Char:GetDescendants()) do
-				if v:IsA("BasePart") then
-					v.CanCollide = false
-				end
-			end
-		end
-	end)
+    if shuttingDown then return end
+    noclipEnabled = true
+    noclipConnection = trackConnection(RunService.RenderStepped:Connect(function()
+        if shuttingDown then return end
+        if Char and Char.Parent then
+            for _, v in ipairs(Char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end))
 end
 
 local function disableNoclip()
-	noclipEnabled = false
-	if noclipConnection then
-		noclipConnection:Disconnect()
-		noclipConnection = nil
-	end
-	if Char then
-		for _, v in ipairs(Char:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = true
-			end
-		end
-	end
+    noclipEnabled = false
+    if noclipConnection then
+        pcall(function() noclipConnection:Disconnect() end)
+        noclipConnection = nil
+    end
+    if Char then
+        for _, v in ipairs(Char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = true
+            end
+        end
+    end
 end
 
 --[[
     Character Reset Handling
 --]]
 local function onCharacterAdded(c)
-	if shuttingDown then return end
-	Char = c
-	Hum = Char:WaitForChild("Humanoid")
-	HRP = Char:WaitForChild("HumanoidRootPart")
-	wait(0.1)
-	if speedEnabled and Hum then
-		Hum.WalkSpeed = speedValue
-	end
-	if flyEnabled and HRP then
-		enableFly()
-	end
-	if noclipEnabled then
-		enableNoclip()
-	end
+    if shuttingDown then return end
+    Char = c
+    Hum = Char:WaitForChild("Humanoid")
+    HRP = Char:WaitForChild("HumanoidRootPart")
+    wait(0.1)
+    if speedEnabled and Hum then
+        Hum.WalkSpeed = speedValue
+    end
+    if flyEnabled and HRP then
+        enableFly()
+    end
+    if noclipEnabled then
+        enableNoclip()
+    end
 end
-LP.CharacterAdded:Connect(onCharacterAdded)
+trackConnection(LP.CharacterAdded:Connect(onCharacterAdded))
 
 --[[
     GUI Creation
 --]]
 local SG = Instance.new("ScreenGui")
 SG.Name = "BigUniversalGUI"
-SG.Parent = game:GetService("CoreGui")
+SG.Parent = CoreGui
 
 local MF = Instance.new("Frame", SG)
 MF.Size = UDim2.new(0, 300, 0, 210)
@@ -143,36 +168,36 @@ local originalPosition = MF.Position
 local dragging = false
 local dragInput, dragStart, startPos
 
-MF.InputBegan:Connect(function(input)
-	if shuttingDown then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = MF.Position
-		input.Changed:Connect(function()
-			if shuttingDown then return end
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-				originalPosition = MF.Position
-			end
-		end)
-	end
-end)
+trackConnection(MF.InputBegan:Connect(function(input)
+    if shuttingDown then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MF.Position
+        input.Changed:Connect(function()
+            if shuttingDown then return end
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                originalPosition = MF.Position
+            end
+        end)
+    end
+end))
 
-MF.InputChanged:Connect(function(input)
-	if shuttingDown then return end
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
-	end
-end)
+trackConnection(MF.InputChanged:Connect(function(input)
+    if shuttingDown then return end
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end))
 
-UserInputService.InputChanged:Connect(function(input)
-	if shuttingDown then return end
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		MF.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
+trackConnection(UserInputService.InputChanged:Connect(function(input)
+    if shuttingDown then return end
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MF.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end))
 
 local Title = Instance.new("TextLabel", MF)
 Title.Size = UDim2.new(1, 0, 0, 40)
@@ -190,327 +215,339 @@ MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.TextScaled = true
 
 local hackList = {
-	{"Speed Hack", "speed"},
-	{"ESP Hack", "esp"},
-	{"Fly Hack", "fly"},
-	{"Infinite Yield", "iy"},
-	{"Noclip Hack", "noclip"}
+    {"Speed Hack", "speed"},
+    {"ESP Hack", "esp"},
+    {"Fly Hack", "fly"},
+    {"Infinite Yield", "iy"},
+    {"Noclip Hack", "noclip"}
 }
 local hackButtons = {}
 for i, data in ipairs(hackList) do
-	local btn = Instance.new("TextButton", MF)
-	btn.Size = UDim2.new(0.9, 0, 0, 30)
-	btn.Position = UDim2.new(0.05, 0, 0, 40 + (i - 1) * 30)
-	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
-	btn.TextColor3 = Color3.new(1, 1, 1)
-	btn.TextScaled = true
-	btn.Text = data[1]
-	hackButtons[data[2]] = btn
+    local btn = Instance.new("TextButton", MF)
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, 0, 40 + (i - 1) * 30)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.TextScaled = true
+    btn.Text = data[1]
+    hackButtons[data[2]] = btn
 end
 
 local function createSubGUI(tt, sx, sy)
-	local f = Instance.new("Frame", SG)
-	f.Size = UDim2.new(0, sx, 0, sy)
-	f.Position = UDim2.new(0.5, -sx / 2, 0.5, -sy / 2)
-	f.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	f.Active = true
-	f.Draggable = true
-	local t = Instance.new("TextLabel", f)
-	t.Size = UDim2.new(1, 0, 0, 30)
-	t.BackgroundTransparency = 1
-	t.Text = tt
-	t.TextColor3 = Color3.new(1, 1, 1)
-	t.TextScaled = true
-	local cb = Instance.new("TextButton", f)
-	cb.Size = UDim2.new(0, 20, 0, 20)
-	cb.Position = UDim2.new(1, -25, 0, 5)
-	cb.Text = "X"
-	cb.TextScaled = true
-	cb.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-	return f, cb
+    local f = Instance.new("Frame", SG)
+    f.Size = UDim2.new(0, sx, 0, sy)
+    f.Position = UDim2.new(0.5, -sx/2, 0.5, -sy/2)
+    f.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    f.Active = true
+    f.Draggable = true
+    local t = Instance.new("TextLabel", f)
+    t.Size = UDim2.new(1, 0, 0, 30)
+    t.BackgroundTransparency = 1
+    t.Text = tt
+    t.TextColor3 = Color3.new(1, 1, 1)
+    t.TextScaled = true
+    local cb = Instance.new("TextButton", f)
+    cb.Size = UDim2.new(0, 20, 0, 20)
+    cb.Position = UDim2.new(1, -25, 0, 5)
+    cb.Text = "X"
+    cb.TextScaled = true
+    cb.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    return f, cb
 end
 
+-- Flash Text (temporary visual indicator)
 do
-	local flashText = "Universal Hacks Loaded"
-	local purpleShades = {"#8A2BE2", "#9400D3", "#9932CC", "#BA55D3", "#9370DB", "#D8BFD8"}
-	local function genRT(txt)
-		local r = ""
-		for i = 1, #txt do
-			local c = txt:sub(i, i)
-			if c ~= " " then
-				local color = purpleShades[math.random(#purpleShades)]
-				r = r .. ("<font color=\"%s\">%s</font>"):format(color, c)
-			else
-				r = r .. " "
-			end
-		end
-		return r
-	end
-	local flashF = Instance.new("Frame", SG)
-	flashF.Size = UDim2.new(0, 400, 0, 50)
-	flashF.Position = UDim2.new(0.5, -200, 1, -60)
-	flashF.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	flashF.BackgroundTransparency = 0.3
-	local flashL = Instance.new("TextLabel", flashF)
-	flashL.Size = UDim2.new(1, 0, 1, 0)
-	flashL.BackgroundTransparency = 1
-	flashL.RichText = true
-	flashL.TextScaled = true
-	flashL.TextColor3 = Color3.new(1, 1, 1)
-	flashL.Text = genRT(flashText)
-	spawn(function()
-		local t = 0
-		while t < 3 do
-			if shuttingDown then return end
-			if flashL and flashL.Parent then
-				flashL.Text = genRT(flashText)
-			end
-			wait(0.2)
-			t = t + 0.2
-		end
-		if flashF and flashF.Parent then flashF:Destroy() end
-	end)
+    local flashText = "Universal Hacks Loaded"
+    local purpleShades = {"#8A2BE2", "#9400D3", "#9932CC", "#BA55D3", "#9370DB", "#D8BFD8"}
+    local function genRT(txt)
+        local r = ""
+        for i = 1, #txt do
+            local c = txt:sub(i, i)
+            if c ~= " " then
+                local color = purpleShades[math.random(#purpleShades)]
+                r = r .. ("<font color=\"%s\">%s</font>"):format(color, c)
+            else
+                r = r .. " "
+            end
+        end
+        return r
+    end
+    local flashF = Instance.new("Frame", SG)
+    flashF.Size = UDim2.new(0, 400, 0, 50)
+    flashF.Position = UDim2.new(0.5, -200, 1, -60)
+    flashF.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    flashF.BackgroundTransparency = 0.3
+    local flashL = Instance.new("TextLabel", flashF)
+    flashL.Size = UDim2.new(1, 0, 1, 0)
+    flashL.BackgroundTransparency = 1
+    flashL.RichText = true
+    flashL.TextScaled = true
+    flashL.TextColor3 = Color3.new(1, 1, 1)
+    flashL.Text = genRT(flashText)
+    spawn(function()
+        local t = 0
+        while t < 3 do
+            if shuttingDown then return end
+            if flashL and flashL.Parent then
+                flashL.Text = genRT(flashText)
+            end
+            wait(0.2)
+            t = t + 0.2
+        end
+        if flashF and flashF.Parent then flashF:Destroy() end
+    end)
 end
 
+-- Speed Hack GUI
 local speedFrame
 local function showSpeedGUI()
-	if shuttingDown then return end
-	if speedFrame then
-		speedFrame.Visible = true
-		return
-	end
-	local f, cb = createSubGUI("Speed Hack", 250, 150)
-	speedFrame = f
-	local box = Instance.new("TextBox", f)
-	box.Size = UDim2.new(0.8, 0, 0, 30)
-	box.Position = UDim2.new(0.1, 0, 0, 50)
-	box.TextScaled = true
-	box.Text = tostring(speedValue)
-	box.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
-	box.TextColor3 = Color3.new(1, 1, 1)
-	local tog = Instance.new("TextButton", f)
-	tog.Size = UDim2.new(0.8, 0, 0, 30)
-	tog.Position = UDim2.new(0.1, 0, 0, 90)
-	tog.TextScaled = true
-	tog.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-	tog.Text = "Disabled"
-	tog.MouseButton1Click:Connect(function()
-		if shuttingDown then return end
-		speedEnabled = not speedEnabled
-		if speedEnabled then
-			speedValue = tonumber(box.Text) or 16
-			if Hum then Hum.WalkSpeed = speedValue end
-			tog.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-			tog.Text = "Enabled"
-		else
-			if Hum then Hum.WalkSpeed = 16 end
-			tog.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-			tog.Text = "Disabled"
-		end
-	end)
-	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
+    if shuttingDown then return end
+    if speedFrame then
+        speedFrame.Visible = true
+        return
+    end
+    local f, cb = createSubGUI("Speed Hack", 250, 150)
+    speedFrame = f
+    local box = Instance.new("TextBox", f)
+    box.Size = UDim2.new(0.8, 0, 0, 30)
+    box.Position = UDim2.new(0.1, 0, 0, 50)
+    box.TextScaled = true
+    box.Text = tostring(speedValue)
+    box.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
+    box.TextColor3 = Color3.new(1, 1, 1)
+    local tog = Instance.new("TextButton", f)
+    tog.Size = UDim2.new(0.8, 0, 0, 30)
+    tog.Position = UDim2.new(0.1, 0, 0, 90)
+    tog.TextScaled = true
+    tog.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    tog.Text = "Disabled"
+    tog.MouseButton1Click:Connect(function()
+        if shuttingDown then return end
+        speedEnabled = not speedEnabled
+        if speedEnabled then
+            speedValue = tonumber(box.Text) or 16
+            if Hum then Hum.WalkSpeed = speedValue end
+            tog.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            tog.Text = "Enabled"
+        else
+            if Hum then Hum.WalkSpeed = 16 end
+            tog.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            tog.Text = "Disabled"
+        end
+    end)
+    cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
+-- ESP Hack GUI
 local espFrame
 local function showESPGUI()
-	if shuttingDown then return end
-	if espFrame then
-		espFrame.Visible = true
-		return
-	end
-	local f, cb = createSubGUI("ESP Hack", 250, 150)
-	espFrame = f
-	local tog = Instance.new("TextButton", f)
-	tog.Size = UDim2.new(0.8, 0, 0, 30)
-	tog.Position = UDim2.new(0.1, 0, 0, 50)
-	tog.Text = "Enable ESP"
-	tog.TextScaled = true
-	tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-	tog.MouseButton1Click:Connect(function()
-		if shuttingDown then return end
-		espEnabled = not espEnabled
-		if espEnabled then
-			tog.Text = "Disable ESP"
-			for _, p in pairs(Players:GetPlayers()) do
-				if p ~= LP and p.Character then
-					if not p.Character:FindFirstChild("ESP_Highlight") then
-						local h = Instance.new("Highlight")
-						h.Name = "ESP_Highlight"
-						h.FillColor = Color3.fromRGB(255, 0, 0)
-						h.Parent = p.Character
-					end
-				end
-			end
-		else
-			tog.Text = "Enable ESP"
-			for _, p in pairs(Players:GetPlayers()) do
-				if p ~= LP and p.Character then
-					local h = p.Character:FindFirstChild("ESP_Highlight")
-					if h then h:Destroy() end
-				end
-			end
-		end
-	end)
-	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
+    if shuttingDown then return end
+    if espFrame then
+        espFrame.Visible = true
+        return
+    end
+    local f, cb = createSubGUI("ESP Hack", 250, 150)
+    espFrame = f
+    local tog = Instance.new("TextButton", f)
+    tog.Size = UDim2.new(0.8, 0, 0, 30)
+    tog.Position = UDim2.new(0.1, 0, 0, 50)
+    tog.Text = "Enable ESP"
+    tog.TextScaled = true
+    tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    tog.MouseButton1Click:Connect(function()
+        if shuttingDown then return end
+        espEnabled = not espEnabled
+        if espEnabled then
+            tog.Text = "Disable ESP"
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LP and p.Character then
+                    if not p.Character:FindFirstChild("ESP_Highlight") then
+                        local h = Instance.new("Highlight")
+                        h.Name = "ESP_Highlight"
+                        h.FillColor = Color3.fromRGB(255, 0, 0)
+                        h.Parent = p.Character
+                    end
+                end
+            end
+        else
+            tog.Text = "Enable ESP"
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LP and p.Character then
+                    local h = p.Character:FindFirstChild("ESP_Highlight")
+                    if h then h:Destroy() end
+                end
+            end
+        end
+    end)
+    cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["esp"].MouseButton1Click:Connect(showESPGUI)
 
-Players.PlayerAdded:Connect(function(p)
-	p.CharacterAdded:Connect(function(c)
-		if shuttingDown then return end
-		if espEnabled then
-			local h = Instance.new("Highlight")
-			h.Name = "ESP_Highlight"
-			h.FillColor = Color3.fromRGB(255, 0, 0)
-			h.Parent = c
-		end
-	end)
-end)
+trackConnection(Players.PlayerAdded:Connect(function(p)
+    trackConnection(p.CharacterAdded:Connect(function(c)
+        if shuttingDown then return end
+        if espEnabled then
+            local h = Instance.new("Highlight")
+            h.Name = "ESP_Highlight"
+            h.FillColor = Color3.fromRGB(255, 0, 0)
+            h.Parent = c
+        end
+    end))
+end))
 
+-- Fly Hack GUI
 local flyFrame
 local function showFlyGUI()
-	if shuttingDown then return end
-	if flyFrame then
-		flyFrame.Visible = true
-		return
-	end
-	local f, cb = createSubGUI("Fly Hack", 250, 150)
-	flyFrame = f
-	local box = Instance.new("TextBox", f)
-	box.Size = UDim2.new(0.8, 0, 0, 30)
-	box.Position = UDim2.new(0.1, 0, 0, 40)
-	box.TextScaled = true
-	box.Text = tostring(flySpeed)
-	box.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
-	box.TextColor3 = Color3.new(1, 1, 1)
-	box.FocusLost:Connect(function() 
-		if shuttingDown then return end
-		flySpeed = tonumber(box.Text) or 50 
-	end)
-	local tog = Instance.new("TextButton", f)
-	tog.Size = UDim2.new(0.8, 0, 0, 30)
-	tog.Position = UDim2.new(0.1, 0, 0, 80)
-	tog.Text = "Enable Fly"
-	tog.TextScaled = true
-	tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-	tog.MouseButton1Click:Connect(function()
-		if shuttingDown then return end
-		flyEnabled = not flyEnabled
-		if flyEnabled then
-			flySpeed = tonumber(box.Text) or 50
-			tog.Text = "Disable Fly"
-			enableFly()
-		else
-			tog.Text = "Enable Fly"
-			disableFly()
-		end
-	end)
-	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
+    if shuttingDown then return end
+    if flyFrame then
+        flyFrame.Visible = true
+        return
+    end
+    local f, cb = createSubGUI("Fly Hack", 250, 150)
+    flyFrame = f
+    local box = Instance.new("TextBox", f)
+    box.Size = UDim2.new(0.8, 0, 0, 30)
+    box.Position = UDim2.new(0.1, 0, 0, 40)
+    box.TextScaled = true
+    box.Text = tostring(flySpeed)
+    box.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
+    box.TextColor3 = Color3.new(1, 1, 1)
+    box.FocusLost:Connect(function()
+        if shuttingDown then return end
+        flySpeed = tonumber(box.Text) or 50
+    end)
+    local tog = Instance.new("TextButton", f)
+    tog.Size = UDim2.new(0.8, 0, 0, 30)
+    tog.Position = UDim2.new(0.1, 0, 0, 80)
+    tog.Text = "Enable Fly"
+    tog.TextScaled = true
+    tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    tog.MouseButton1Click:Connect(function()
+        if shuttingDown then return end
+        flyEnabled = not flyEnabled
+        if flyEnabled then
+            flySpeed = tonumber(box.Text) or 50
+            tog.Text = "Disable Fly"
+            enableFly()
+        else
+            tog.Text = "Enable Fly"
+            disableFly()
+        end
+    end)
+    cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
 
+-- Infinite Yield Loader
 hackButtons["iy"].MouseButton1Click:Connect(function()
-	if shuttingDown then return end
-	if not _G.InfiniteYieldLoaded then
-		_G.InfiniteYieldLoaded = true
-		if game.HttpGet then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-		else
-			warn("HttpGet not available")
-		end
-	end
+    if shuttingDown then return end
+    if not _G.InfiniteYieldLoaded then
+        _G.InfiniteYieldLoaded = true
+        if game.HttpGet then
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        else
+            warn("HttpGet not available")
+        end
+    end
 end)
 
+-- Noclip Hack GUI
 local noclipFrame
 local function showNoclipGUI()
-	if shuttingDown then return end
-	if noclipFrame then
-		noclipFrame.Visible = true
-		return
-	end
-	local f, cb = createSubGUI("Noclip Hack", 250, 150)
-	noclipFrame = f
-	local tog = Instance.new("TextButton", f)
-	tog.Size = UDim2.new(0.8, 0, 0, 30)
-	tog.Position = UDim2.new(0.1, 0, 0, 50)
-	tog.Text = "Enable Noclip"
-	tog.TextScaled = true
-	tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-	tog.MouseButton1Click:Connect(function()
-		if shuttingDown then return end
-		noclipEnabled = not noclipEnabled
-		if noclipEnabled then
-			tog.Text = "Disable Noclip"
-			enableNoclip()
-		else
-			tog.Text = "Enable Noclip"
-			disableNoclip()
-		end
-	end)
-	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
+    if shuttingDown then return end
+    if noclipFrame then
+        noclipFrame.Visible = true
+        return
+    end
+    local f, cb = createSubGUI("Noclip Hack", 250, 150)
+    noclipFrame = f
+    local tog = Instance.new("TextButton", f)
+    tog.Size = UDim2.new(0.8, 0, 0, 30)
+    tog.Position = UDim2.new(0.1, 0, 0, 50)
+    tog.Text = "Enable Noclip"
+    tog.TextScaled = true
+    tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    tog.MouseButton1Click:Connect(function()
+        if shuttingDown then return end
+        noclipEnabled = not noclipEnabled
+        if noclipEnabled then
+            tog.Text = "Disable Noclip"
+            enableNoclip()
+        else
+            tog.Text = "Enable Noclip"
+            disableNoclip()
+        end
+    end)
+    cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
 
 --[[
-    Shutdown Function: Clean up connections and GUI elements
+    Shutdown Function: Clean up all connections and objects
 --]]
 local function shutdown()
-	if shutdownCalled then return end
-	shutdownCalled = true
-	shuttingDown = true
-	pcall(function() disableFly() end)
-	pcall(function() disableNoclip() end)
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LP and p.Character then
-			local h = p.Character:FindFirstChild("ESP_Highlight")
-			if h then h:Destroy() end
-		end
-	end
-	if speedFrame and speedFrame.Parent then speedFrame:Destroy() end
-	if espFrame and espFrame.Parent then espFrame:Destroy() end
-	if flyFrame and flyFrame.Parent then flyFrame:Destroy() end
-	if noclipFrame and noclipFrame.Parent then noclipFrame:Destroy() end
-	if MF and MF.Parent then MF:Destroy() end
-	if SG and SG.Parent then SG:Destroy() end
+    if shutdownCalled then return end
+    shutdownCalled = true
+    shuttingDown = true
+    pcall(disableFly)
+    pcall(disableNoclip)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LP and p.Character then
+            local h = p.Character:FindFirstChild("ESP_Highlight")
+            if h then h:Destroy() end
+        end
+    end
+    if speedFrame and speedFrame.Parent then speedFrame:Destroy() end
+    if espFrame and espFrame.Parent then espFrame:Destroy() end
+    if flyFrame and flyFrame.Parent then flyFrame:Destroy() end
+    if noclipFrame and noclipFrame.Parent then noclipFrame:Destroy() end
+    if MF and MF.Parent then MF:Destroy() end
+    if SG and SG.Parent then SG:Destroy() end
+    disconnectAll()
 end
 
-LP.AncestryChanged:Connect(function(child, parent)
-	if not parent then
-		shutdown()
-	end
-end)
+-- Trigger shutdown when the local player leaves
+trackConnection(LP.AncestryChanged:Connect(function(child, parent)
+    if not parent then
+        shutdown()
+    end
+end))
 
+-- Also bind shutdown to game close
+pcall(function() game:BindToClose(shutdown) end)
+
+-- Minimize GUI Button
 MinBtn.MouseButton1Click:Connect(function()
-	if shuttingDown then return end
-	if not MF or not MF.Parent then return end
-	originalPosition = MF.Position
-	originalSize = MF.Size
-	local ti = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tw = TweenService:Create(MF, ti, {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0.5, -20, 0, 10)})
-	tw:Play()
-	tw.Completed:Connect(function()
-		if shuttingDown then return end
-		if MF then MF.Visible = false end
-		local minimized = Instance.new("Frame", SG)
-		minimized.Name = "MiniLogo"
-		minimized.Size = UDim2.new(0, 40, 0, 40)
-		minimized.Position = UDim2.new(0.5, -20, 0, 10)
-		minimized.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
-		minimized.BackgroundTransparency = 0.4
-		minimized.Rotation = 45
-		minimized.InputBegan:Connect(function(inp)
-			if shuttingDown then return end
-			if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-				minimized:Destroy()
-				if MF then
-					MF.Visible = true
-					local tw2 = TweenService:Create(MF, ti, {Size = originalSize, Position = originalPosition})
-					tw2:Play()
-				end
-			end
-		end)
-	end)
+    if shuttingDown then return end
+    if not MF or not MF.Parent then return end
+    originalPosition = MF.Position
+    originalSize = MF.Size
+    local ti = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tw = TweenService:Create(MF, ti, {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0.5, -20, 0, 10)})
+    tw:Play()
+    tw.Completed:Connect(function()
+        if shuttingDown then return end
+        if MF then MF.Visible = false end
+        local minimized = Instance.new("Frame", SG)
+        minimized.Name = "MiniLogo"
+        minimized.Size = UDim2.new(0, 40, 0, 40)
+        minimized.Position = UDim2.new(0.5, -20, 0, 10)
+        minimized.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+        minimized.BackgroundTransparency = 0.4
+        minimized.Rotation = 45
+        minimized.InputBegan:Connect(function(inp)
+            if shuttingDown then return end
+            if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+                minimized:Destroy()
+                if MF then
+                    MF.Visible = true
+                    local tw2 = TweenService:Create(MF, ti, {Size = originalSize, Position = originalPosition})
+                    tw2:Play()
+                end
+            end
+        end)
+    end)
 end)
 
 local followText = Instance.new("TextLabel", MF)
@@ -524,4 +561,3 @@ followText.Font = Enum.Font.Arcade
 followText.TextStrokeTransparency = 0.8
 followText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 followText.ZIndex = 2
-
