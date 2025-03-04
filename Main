@@ -48,13 +48,11 @@ local function enableFly()
         bg.P = 90000
         bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
         bg.D = 1000
-
         local bv = Instance.new("BodyVelocity")
         bv.Name = "FlyBV"
         bv.Parent = HRP
         bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
         bv.Velocity = Vector3.new(0, 0, 0)
-
         flyConnection = trackConnection(RunService.Heartbeat:Connect(function()
             if shuttingDown then return end
             if not flyEnabled or not HRP or not HRP.Parent then return end
@@ -467,14 +465,12 @@ local function shutdown()
     shuttingDown = true
     pcall(disableFly)
     pcall(disableNoclip)
-    
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LP and p.Character then
             local h = p.Character:FindFirstChild("ESP_Highlight")
             if h then h:Destroy() end
         end
     end
-
     if Char then
         for _, v in ipairs(Char:GetDescendants()) do
             if v.Name:lower():find("xeno") then
@@ -482,14 +478,12 @@ local function shutdown()
             end
         end
     end
-
     if speedFrame and speedFrame.Parent then speedFrame:Destroy() end
     if espFrame and espFrame.Parent then espFrame:Destroy() end
     if flyFrame and flyFrame.Parent then flyFrame:Destroy() end
     if noclipFrame and noclipFrame.Parent then noclipFrame:Destroy() end
     if MF and MF.Parent then MF:Destroy() end
     if SG and SG.Parent then SG:Destroy() end
-
     disconnectAll()
 end
 
@@ -544,3 +538,4 @@ followText.Font = Enum.Font.Arcade
 followText.TextStrokeTransparency = 0.8
 followText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 followText.ZIndex = 2
+
