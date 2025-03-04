@@ -3,7 +3,6 @@
 if _G.BigUniversalScriptLoaded then return end
 _G.BigUniversalScriptLoaded = true
 
--- Services and Variables
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -20,18 +19,15 @@ local Hum = Char:FindFirstChildOfClass("Humanoid")
 local HRP = Char:WaitForChild("HumanoidRootPart")
 while not workspace.CurrentCamera do wait() end
 
--- Connection tracking table
 local connections = {}
 local function trackConnection(conn)
     table.insert(connections, conn)
     return conn
 end
 
--- Flags for safe shutdown
 local shuttingDown = false
 local shutdownCalled = false
 
--- Utility: Disconnect all tracked connections
 local function disconnectAll()
     for _, conn in ipairs(connections) do
         if conn.Connected then
@@ -41,9 +37,6 @@ local function disconnectAll()
     connections = {}
 end
 
---[[
-    Fly Functions
---]]
 local flyConnection
 local function enableFly()
     if shuttingDown then return end
@@ -96,9 +89,6 @@ local function disableFly()
     end
 end
 
---[[
-    Noclip Functions
---]]
 local noclipConnection
 local function enableNoclip()
     if shuttingDown then return end
@@ -130,9 +120,6 @@ local function disableNoclip()
     end
 end
 
---[[
-    Character Reset Handling
---]]
 local function onCharacterAdded(c)
     if shuttingDown then return end
     Char = c
@@ -151,9 +138,6 @@ local function onCharacterAdded(c)
 end
 trackConnection(LP.CharacterAdded:Connect(onCharacterAdded))
 
---[[
-    GUI Creation
---]]
 local SG = Instance.new("ScreenGui")
 SG.Name = "BigUniversalGUI"
 SG.Parent = CoreGui
@@ -255,7 +239,6 @@ local function createSubGUI(tt, sx, sy)
     return f, cb
 end
 
--- Flash Text (temporary visual indicator)
 do
     local flashText = "Universal Hacks Loaded"
     local purpleShades = {"#8A2BE2", "#9400D3", "#9932CC", "#BA55D3", "#9370DB", "#D8BFD8"}
@@ -298,7 +281,6 @@ do
     end)
 end
 
--- Speed Hack GUI
 local speedFrame
 local function showSpeedGUI()
     if shuttingDown then return end
@@ -339,7 +321,6 @@ local function showSpeedGUI()
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
--- ESP Hack GUI
 local espFrame
 local function showESPGUI()
     if shuttingDown then return end
@@ -396,7 +377,6 @@ trackConnection(Players.PlayerAdded:Connect(function(p)
     end))
 end))
 
--- Fly Hack GUI
 local flyFrame
 local function showFlyGUI()
     if shuttingDown then return end
@@ -439,7 +419,6 @@ local function showFlyGUI()
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
 
--- Infinite Yield Loader
 hackButtons["iy"].MouseButton1Click:Connect(function()
     if shuttingDown then return end
     if not _G.InfiniteYieldLoaded then
@@ -452,7 +431,6 @@ hackButtons["iy"].MouseButton1Click:Connect(function()
     end
 end)
 
--- Noclip Hack GUI
 local noclipFrame
 local function showNoclipGUI()
     if shuttingDown then return end
@@ -483,41 +461,46 @@ local function showNoclipGUI()
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
 
---[[
-    Shutdown Function: Clean up all connections and objects
---]]
 local function shutdown()
     if shutdownCalled then return end
     shutdownCalled = true
     shuttingDown = true
     pcall(disableFly)
     pcall(disableNoclip)
+    
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LP and p.Character then
             local h = p.Character:FindFirstChild("ESP_Highlight")
             if h then h:Destroy() end
         end
     end
+
+    if Char then
+        for _, v in ipairs(Char:GetDescendants()) do
+            if v.Name:lower():find("xeno") then
+                pcall(function() v:Destroy() end)
+            end
+        end
+    end
+
     if speedFrame and speedFrame.Parent then speedFrame:Destroy() end
     if espFrame and espFrame.Parent then espFrame:Destroy() end
     if flyFrame and flyFrame.Parent then flyFrame:Destroy() end
     if noclipFrame and noclipFrame.Parent then noclipFrame:Destroy() end
     if MF and MF.Parent then MF:Destroy() end
     if SG and SG.Parent then SG:Destroy() end
+
     disconnectAll()
 end
 
--- Trigger shutdown when the local player leaves
 trackConnection(LP.AncestryChanged:Connect(function(child, parent)
     if not parent then
         shutdown()
     end
 end))
 
--- Also bind shutdown to game close
 pcall(function() game:BindToClose(shutdown) end)
 
--- Minimize GUI Button
 MinBtn.MouseButton1Click:Connect(function()
     if shuttingDown then return end
     if not MF or not MF.Parent then return end
