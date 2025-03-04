@@ -19,6 +19,7 @@ local HRP = Char:WaitForChild("HumanoidRootPart")
 while not workspace.CurrentCamera do wait() end
 
 local flyConnection, noclipConnection
+local shuttingDown = false  -- flag to signal shutdown
 local shutdownCalled = false
 
 --[[
@@ -39,8 +40,11 @@ local function enableFly()
 		bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 		bv.Velocity = Vector3.new(0, 0, 0)
 		flyConnection = RunService.Heartbeat:Connect(function()
+			if shuttingDown then return end
 			if not flyEnabled or not HRP or not HRP.Parent then return end
-			local camCFrame = workspace.CurrentCamera.CFrame
+			local cam = workspace.CurrentCamera
+			if not cam then return end
+			local camCFrame = cam.CFrame
 			local moveVec = Vector3.new()
 			if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camCFrame.LookVector end
 			if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camCFrame.LookVector end
@@ -75,6 +79,7 @@ end
 local function enableNoclip()
 	noclipEnabled = true
 	noclipConnection = RunService.RenderStepped:Connect(function()
+		if shuttingDown then return end
 		if Char and Char.Parent then
 			for _, v in ipairs(Char:GetDescendants()) do
 				if v:IsA("BasePart") then
@@ -104,6 +109,7 @@ end
     Character Reset Handling
 --]]
 local function onCharacterAdded(c)
+	if shuttingDown then return end
 	Char = c
 	Hum = Char:WaitForChild("Humanoid")
 	HRP = Char:WaitForChild("HumanoidRootPart")
@@ -138,11 +144,13 @@ local dragging = false
 local dragInput, dragStart, startPos
 
 MF.InputBegan:Connect(function(input)
+	if shuttingDown then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true
 		dragStart = input.Position
 		startPos = MF.Position
 		input.Changed:Connect(function()
+			if shuttingDown then return end
 			if input.UserInputState == Enum.UserInputState.End then
 				dragging = false
 				originalPosition = MF.Position
@@ -152,12 +160,14 @@ MF.InputBegan:Connect(function(input)
 end)
 
 MF.InputChanged:Connect(function(input)
+	if shuttingDown then return end
 	if input.UserInputType == Enum.UserInputType.MouseMovement then
 		dragInput = input
 	end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
+	if shuttingDown then return end
 	if input == dragInput and dragging then
 		local delta = input.Position - dragStart
 		MF.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
@@ -251,6 +261,7 @@ do
 	spawn(function()
 		local t = 0
 		while t < 3 do
+			if shuttingDown then return end
 			if flashL and flashL.Parent then
 				flashL.Text = genRT(flashText)
 			end
@@ -263,6 +274,7 @@ end
 
 local speedFrame
 local function showSpeedGUI()
+	if shuttingDown then return end
 	if speedFrame then
 		speedFrame.Visible = true
 		return
@@ -283,6 +295,7 @@ local function showSpeedGUI()
 	tog.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 	tog.Text = "Disabled"
 	tog.MouseButton1Click:Connect(function()
+		if shuttingDown then return end
 		speedEnabled = not speedEnabled
 		if speedEnabled then
 			speedValue = tonumber(box.Text) or 16
@@ -295,12 +308,13 @@ local function showSpeedGUI()
 			tog.Text = "Disabled"
 		end
 	end)
-	cb.MouseButton1Click:Connect(function() f.Visible = false end)
+	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["speed"].MouseButton1Click:Connect(showSpeedGUI)
 
 local espFrame
 local function showESPGUI()
+	if shuttingDown then return end
 	if espFrame then
 		espFrame.Visible = true
 		return
@@ -314,6 +328,7 @@ local function showESPGUI()
 	tog.TextScaled = true
 	tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
 	tog.MouseButton1Click:Connect(function()
+		if shuttingDown then return end
 		espEnabled = not espEnabled
 		if espEnabled then
 			tog.Text = "Disable ESP"
@@ -337,12 +352,13 @@ local function showESPGUI()
 			end
 		end
 	end)
-	cb.MouseButton1Click:Connect(function() f.Visible = false end)
+	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["esp"].MouseButton1Click:Connect(showESPGUI)
 
 Players.PlayerAdded:Connect(function(p)
 	p.CharacterAdded:Connect(function(c)
+		if shuttingDown then return end
 		if espEnabled then
 			local h = Instance.new("Highlight")
 			h.Name = "ESP_Highlight"
@@ -354,6 +370,7 @@ end)
 
 local flyFrame
 local function showFlyGUI()
+	if shuttingDown then return end
 	if flyFrame then
 		flyFrame.Visible = true
 		return
@@ -367,7 +384,10 @@ local function showFlyGUI()
 	box.Text = tostring(flySpeed)
 	box.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
 	box.TextColor3 = Color3.new(1, 1, 1)
-	box.FocusLost:Connect(function() flySpeed = tonumber(box.Text) or 50 end)
+	box.FocusLost:Connect(function() 
+		if shuttingDown then return end
+		flySpeed = tonumber(box.Text) or 50 
+	end)
 	local tog = Instance.new("TextButton", f)
 	tog.Size = UDim2.new(0.8, 0, 0, 30)
 	tog.Position = UDim2.new(0.1, 0, 0, 80)
@@ -375,6 +395,7 @@ local function showFlyGUI()
 	tog.TextScaled = true
 	tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
 	tog.MouseButton1Click:Connect(function()
+		if shuttingDown then return end
 		flyEnabled = not flyEnabled
 		if flyEnabled then
 			flySpeed = tonumber(box.Text) or 50
@@ -385,11 +406,12 @@ local function showFlyGUI()
 			disableFly()
 		end
 	end)
-	cb.MouseButton1Click:Connect(function() f.Visible = false end)
+	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["fly"].MouseButton1Click:Connect(showFlyGUI)
 
 hackButtons["iy"].MouseButton1Click:Connect(function()
+	if shuttingDown then return end
 	if not _G.InfiniteYieldLoaded then
 		_G.InfiniteYieldLoaded = true
 		if game.HttpGet then
@@ -402,6 +424,7 @@ end)
 
 local noclipFrame
 local function showNoclipGUI()
+	if shuttingDown then return end
 	if noclipFrame then
 		noclipFrame.Visible = true
 		return
@@ -415,6 +438,7 @@ local function showNoclipGUI()
 	tog.TextScaled = true
 	tog.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
 	tog.MouseButton1Click:Connect(function()
+		if shuttingDown then return end
 		noclipEnabled = not noclipEnabled
 		if noclipEnabled then
 			tog.Text = "Disable Noclip"
@@ -424,14 +448,17 @@ local function showNoclipGUI()
 			disableNoclip()
 		end
 	end)
-	cb.MouseButton1Click:Connect(function() f.Visible = false end)
+	cb.MouseButton1Click:Connect(function() if f then f.Visible = false end end)
 end
 hackButtons["noclip"].MouseButton1Click:Connect(showNoclipGUI)
 
-
+--[[
+    Shutdown Function: Clean up connections and GUI elements
+--]]
 local function shutdown()
 	if shutdownCalled then return end
 	shutdownCalled = true
+	shuttingDown = true
 	pcall(function() disableFly() end)
 	pcall(function() disableNoclip() end)
 	for _, p in pairs(Players:GetPlayers()) do
@@ -455,6 +482,7 @@ LP.AncestryChanged:Connect(function(child, parent)
 end)
 
 MinBtn.MouseButton1Click:Connect(function()
+	if shuttingDown then return end
 	if not MF or not MF.Parent then return end
 	originalPosition = MF.Position
 	originalSize = MF.Size
@@ -462,6 +490,7 @@ MinBtn.MouseButton1Click:Connect(function()
 	local tw = TweenService:Create(MF, ti, {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0.5, -20, 0, 10)})
 	tw:Play()
 	tw.Completed:Connect(function()
+		if shuttingDown then return end
 		if MF then MF.Visible = false end
 		local minimized = Instance.new("Frame", SG)
 		minimized.Name = "MiniLogo"
@@ -471,6 +500,7 @@ MinBtn.MouseButton1Click:Connect(function()
 		minimized.BackgroundTransparency = 0.4
 		minimized.Rotation = 45
 		minimized.InputBegan:Connect(function(inp)
+			if shuttingDown then return end
 			if inp.UserInputType == Enum.UserInputType.MouseButton1 then
 				minimized:Destroy()
 				if MF then
@@ -494,3 +524,4 @@ followText.Font = Enum.Font.Arcade
 followText.TextStrokeTransparency = 0.8
 followText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 followText.ZIndex = 2
+
